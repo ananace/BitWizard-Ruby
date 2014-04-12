@@ -124,13 +124,13 @@ class BitWizardCTL
 	def cmd_pwm(*args)
 		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 1-3)" unless (1..3).include? args.count
 		addr, port, value = *args if args.count == 3
-		value = value.to_i if value and not ["on","off"].include? value
+		value = value.to_i if not ["on","off"].include? value
 		addr, port = *args if args.count == 2
 		port = port.to_i if port
 		addr = args[0] if args.count == 1
 
 		addr = parse_addr addr
-		raise ArgumentError.new "Value must be between 0 and 255" if value and not (0..255).include? value
+		raise ArgumentError.new "Value must be between 0 and 255" unless value.is_a? String or (0..255).include? value
 
 		board = @boards[addr] if @boards.has_key? addr
 		unless board then
@@ -148,6 +148,10 @@ class BitWizardCTL
 				board.pwm_enable port if value == "on"
 				puts "0x#{addr.to_s(16)}'s PWM on port \##{port} was #{(value == "on" and cur_val) or (value == "off" and not cur_val) ? "already " : ""}#{value == "off" ? "disabled" : "enabled"}."
 			else
+				ports = board.pwm_ports
+				puts "0x#{addr.to_s(16)} doesn't have PWM enabled on port #{port}" unless ports.include? port
+				return unless ports.include? port
+
 				board[port] = value if value
 				puts "0x#{addr.to_s(16)}'s PWM[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
 			end
