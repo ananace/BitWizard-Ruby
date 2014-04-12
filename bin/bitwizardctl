@@ -31,6 +31,18 @@ class BitWizardCTL
 	def parse_addr(addr)
 		addr.to_i
 		eval addr if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+
+		raise ArgumentError.new "Address must be between 0x00 and 0xff" unless (0..255).include? addr
+	end
+
+	def get_board(addr)
+		board = @boards[addr] if @boards.has_key? addr
+		unless board then
+			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
+			@boards[addr] = board if board.valid?
+		end
+
+		raise ArgumentError.new "No valid board on 0x#{addr.to_s(16)}" unless board.valid?
 	end
 
 	def initialize(args)
@@ -118,21 +130,25 @@ class BitWizardCTL
 	end
 
 	def cmd_list(*)
-		@boards.each do |addr, board|
+		@boards.each do |_, board|
 			puts "0x#{board.address.to_s(16)}: #{board.type} (#{board.version})"
 		end
 	end
 
 	def cmd_eeprom(*args)
 		if args.count == 0 then
-			@boards.each do |addr, board|
+			@boards.each do |_, board|
 				puts "0x#{board.address.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
 			end
 		else
 			args.each do |addr|
-				addr = parse_addr addr
-				next unless (0..255).include? addr
-				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr, :skip_check => true, :bus => Options[:bus]).read(0x02, 4).pack("C*").unpack("l>")[0]}"
+				begin
+					addr = parse_addr addr
+					board = get_board addr
+					puts "0x#{addr.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
+				rescue ArgumentError => err
+					puts "0x#{addr.to_s(16)}: #{err}"
+				end
 			end
 		end
 	end
@@ -145,16 +161,11 @@ class BitWizardCTL
 		port = port.to_i if port
 		addr = args[0] if args.count == 1
 
-		addr = parse_addr addr
 		raise ArgumentError.new "Value must be between 0 and 255" unless value.is_a? String or (0..255).include? value
 
-		board = @boards[addr] if @boards.has_key? addr
-		unless board then
-			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
-			@boards[addr] = board if board.valid?
-		end
+		addr = parse_addr addr
+		board = get_board addr
 
-		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support PWM actions" unless board.known_board[:features].include? :pwm
 
 		puts "0x#{addr.to_s(16)}:"
@@ -190,17 +201,11 @@ class BitWizardCTL
 		addr, type = *args if args.count == 2
 		type = type.to_sym
 
-		addr = parse_addr addr
-
 		raise ArgumentError.new "Value to #{args.count == 3 ? "set" : "read"} must be 'current', 'target', or 'delay'" unless [:current, :target, :delay].include? type
 		
-		board = @boards[addr] if @boards.has_key? addr
-		unless board then
-			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
-			@boards[addr] = board if board.valid?
-		end
+		addr = parse_addr addr
+		board = get_board addr
 
-		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support stepper actions" unless board.known_board[:features].include? :stepper
 
 		case type
@@ -222,18 +227,13 @@ class BitWizardCTL
 		addr, motor, value = *args
 		motor = motor.to_sym
 		value = vaule.to_i unless value == "stop"
-		addr = parse_addr addr
 
 		raise ArgumentError.new "Motor must be 'A' or 'B'" unless [:A,:B].include? motor
 		raise ArgumentError.new "Value must be between -255 - 255" unless value.is_a? String or (-255..255).include value
 		
-		board = @boards[addr] if @boards.has_key? addr
-		unless board then
-			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
-			@boards[addr] = board if board.valid?
-		end
+		addr = parse_addr addr
+		board = get_board addr
 
-		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support motor actions" unless board.known_board[:features].include? :motor
 
 		if value.is_a? String

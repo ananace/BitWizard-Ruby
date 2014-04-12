@@ -186,13 +186,13 @@ module BitWizard
 
 		def i2c_write(reg, value)
 			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.unpack("C*").inspect or value.inspect}")
-			PiPiper::I2c.begin do |i2c|
+			PiPiper::I2C.begin do |i2c|
 				i2c.write({ :to => @address, :data => [reg, value] })
 			end
 		end
 
 		def i2c_read(reg, count)
-			data = PiPiper::I2c.begin do |i2c|
+			data = PiPiper::I2C.begin do |i2c|
 				i2c.write({ :to => @address | 1, :data => [reg, *Array.new(count, 0)] })
 				i2c.read count
 			end
