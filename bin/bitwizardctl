@@ -49,7 +49,7 @@ class BitWizardCTL
 
 	def run_cmd!(*args)
 		command = args.shift
-		if respond_to? "cmd_#{command}".to_sym then
+		if respond_to? "cmd_#{command}".to_sym, true then
 			begin
 				send("cmd_#{command}".to_sym, *args)
 			rescue ArgumentError => ex
