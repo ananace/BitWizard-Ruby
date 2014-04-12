@@ -36,18 +36,22 @@ class BitWizardCTL
 		print "> "
 		STDIN.each_line do |line|
 			data = line.split
-			command = data[0]
-			arguments = data[1] if data.count > 1
-			arguments = data[1..-1] if data.count > 2
+			command = data.shift
+			arguments = data[0] if data.count == 1
+			arguments = data[0..-1] if data.count > 1
+
+			puts "Cmd: #{command}"
+			puts "Args: #{arguments.inspect}"
 
 			if respond_to? "cmd_#{command}".to_sym then
-				send "cmd_#{command}".to_sym, arguments
+				begin
+					send "cmd_#{command}".to_sym, arguments
+				rescue ArgumentError => ex
+					puts "\e[31m#{ex}\3[0m"
+					puts ex.backtrace if Options[:verbose]
+				end
 			else
 				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
-			end
-
-			@boards.delete_if do |addr,board|
-				true if not addr or not board
 			end
 
 			print "> "
@@ -74,6 +78,7 @@ class BitWizardCTL
 	def cmd_scan(*)
 		puts "Scanning for boards..."
 
+		@boards = { }
 		(0..0xff).step(2) do |address|
 			begin
 				temp = BitWizard::Board.detect address, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
@@ -90,7 +95,7 @@ class BitWizardCTL
 		puts "Boards:"
 
 		@boards.each do |addr, board|
-			puts "0x#{board.address}: #{board.type} (#{board.version})"
+			puts "0x#{board.address.to_s(16)}: #{board.type} (#{board.version})"
 		end
 	end
 
