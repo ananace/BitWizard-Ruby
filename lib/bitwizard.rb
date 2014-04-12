@@ -4,7 +4,7 @@ module BitWizard
 
 	class Board
 
-		attr_accessor :type, :version, :address, :bus
+		attr_reader :type, :version, :address, :bus
 
 		def Board.scan(bus=:spi)
 			found = []
@@ -81,7 +81,7 @@ module BitWizard
 		#   * Must not have it's least significant bit set
 		#
 		# @param [Number] new_address The new address of the board
-		def change_address(new_address)
+		def address=(new_address)
 			raise ArgumentError.new "#{new_address} is not a valid address" unless new_address.is_a? Fixnum and (0..255).include? new_address and new_address|1 != new_address
 
 			old_address = @address

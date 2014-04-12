@@ -1,4 +1,27 @@
 #!/usr/bin/env ruby
 
 require 'bitwizard'
+require 'optparse'
+
+class BasicLogger
+	def debug(string)
+		puts string
+	end
+end
+
+options = {}
+OptionParser.new do |opts|
+	opts.banner = "Usage: #{$0} [options] [command [arguments]]..."
+
+	opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+		options[:verbose] = v
+	end
+
+	opts.on("-h", "--help", "Shows this text") do
+		puts opts
+		exit
+	end
+end.parse!
+
+
 
