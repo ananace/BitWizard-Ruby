@@ -117,10 +117,12 @@ class BitWizardCTL
 	def cmd_pwm(*args)
 		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 2..3) given" unless (2..3).include? args.count
 		addr, port, value = *args if args.count == 3
+		value = value.to_i if value
 		addr, port = *args if args.count == 2
+		port = port.to_i
 
 		addr = eval "#{addr}" if /^0x[0-9]{1,2}$/ =~ addr
-		raise ArgumentError.new "Value must be between 0 and 100" unless value and (0..100).include? value
+		raise ArgumentError.new "Value must be between 0 and 100" if value and not (0..100).include? value
 
 		board = @boards[addr] if @boards.has_key? addr
 		unless board then
