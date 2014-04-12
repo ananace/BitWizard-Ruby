@@ -167,8 +167,8 @@ class BitWizardCTL
 
 		case type
 		when :current
-			board.stepper_current = value if value
-			puts "0x#{addr.to_s(16)}'s current position: #{board.stepper_current}"
+			board.stepper_position = value if value
+			puts "0x#{addr.to_s(16)}'s current position: #{board.stepper_position}"
 		when :target
 			board.stepper_target = value if value
 			puts "0x#{addr.to_s(16)}'s target position: #{board.stepper_target}"

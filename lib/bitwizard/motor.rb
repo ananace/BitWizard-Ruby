@@ -52,7 +52,7 @@ module BitWizard
 			#
 			# @return [Number] The current stepper position
 			def stepper_position
-				read(0x40, 4).unpack("C*").pack("l>")[0]
+				read(0x40, 4).pack("C*").unpack("l>")[0]
 			end
 			#Set the current position of the stepper motor, without actually moving it
 			#
@@ -67,7 +67,7 @@ module BitWizard
 			#
 			# @return [Number] The target position of the stepper
 			def stepper_target
-				read(0x41, 4).unpack("C*").pack("l>")[0]
+				read(0x41, 4).pack("C*").unpack("l>")[0]
 			end
 			#Set the target position of the stepper motor
 			#
@@ -89,7 +89,7 @@ module BitWizard
 			# @param [Number] delay The new stepdelay, in tenths of a millisecond (maximum 255 - 25ms between steps)
 			def stepper_delay=(delay)
 				raise ArgumentError.new "Delay must be an integer between 0 and 255" unless delay.is_a? Fixnum and (0..255).include? delay
-				
+
 				write(0x43, delay)
 			end
 
