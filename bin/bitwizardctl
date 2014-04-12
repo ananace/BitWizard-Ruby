@@ -23,7 +23,7 @@ class BitWizardCTL
 		:eeprom => { :args => "[addrs]", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
 		:exit => { :text => "Exits the program" },
 		:help => { :text => "Lists all the valid commands, or detailed help for a given command" },
-		:pwm => { :args => "<addr> <port> [value]", :text => "Get/Set the PWM value for a certain port on a board" },
+		:pwm => { :args => "<addr> [port [value]]", :text => "Get/Set the PWM value for a certain port on a board" },
 		:stepper => { :args => "<addr> <current/target/delay> [value]", :text => "Get/Set a value for a stepper motor on the specified board" }
 	}
 
@@ -122,11 +122,12 @@ class BitWizardCTL
 	end
 
 	def cmd_pwm(*args)
-		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 2-3)" unless (2..3).include? args.count
+		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 1-3)" unless (1..3).include? args.count
 		addr, port, value = *args if args.count == 3
 		value = value.to_i if value
 		addr, port = *args if args.count == 2
-		port = port.to_i
+		port = port.to_i if port
+		addr = *args if args.count == 1
 
 		addr = parse_addr addr
 		raise ArgumentError.new "Value must be between 0 and 255" if value and not (0..255).include? value
@@ -140,8 +141,14 @@ class BitWizardCTL
 		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support PWM actions" unless board.known_board[:features].include? :pwm
 
-		board[port] = value if value
-		puts "0x#{addr.to_s(16)}[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+		if port then
+			board[port] = value if value
+			puts "0x#{addr.to_s(16)}' PWM[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+		else
+			board.pwm_enabled?.each do |port|
+				puts "0x#{addr.to_s(16)}' PWM[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+			end
+		end
 	end
 
 	def cmd_stepper(*args)
