@@ -10,12 +10,12 @@ module BitWizard
 		# @param [optional, Hash] options A Hash of options.
 		# @option options [Symbol] :bus The type of bus the board is connected on. (:spi or :i2c)
 		# @option options [Logger] :logger A logger you want to attach to the board.
-		def Board.detect(address, options={})
+		def Board.detect(options)
 			options = {
+				:address => -1,
 				:bus => :spi,
 				:logger => NullLogger.new
 			}.merge(options).merge({
-				:address => address,
 				:type => :auto_detect,
 				:skip_check => false
 			})

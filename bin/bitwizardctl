@@ -46,6 +46,10 @@ class BitWizardCTL
 				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
 			end
 
+			@boards.delete_if do |addr,board|
+				true if not addr or not board
+			end
+
 			print "> "
 		end
 	end
@@ -72,12 +76,11 @@ class BitWizardCTL
 
 		(0..0xff).step(2) do |address|
 			begin
-				temp = BitWizard::Board.detect :address => address, :bus => Options[:bus]
+				temp = BitWizard::Board.detect address, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
 				next unless temp.valid?
 
-				temp.logger = @defaultlogger if Options[:verbose]
 				@boards[temp.address] = temp
-				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})" if temp.valid? 
+				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})"
 			rescue
 			end
 		end
