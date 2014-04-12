@@ -40,15 +40,16 @@ class BitWizardCTL
 			arguments = data[0] if data.count == 1
 			arguments = data[0..-1] if data.count > 1
 
-			puts "Cmd: #{command}"
-			puts "Args: #{arguments.inspect}"
-
 			if respond_to? "cmd_#{command}".to_sym then
 				begin
 					send("cmd_#{command}".to_sym, *arguments)
 				rescue ArgumentError => ex
-					puts "\e[31m#{ex}\e[0m"
-					puts ex.backtrace if Options[:verbose]
+					puts "  \e[31m#{ex}\e[0m"
+					if Options[:verbose] then
+						ex.backtrace.each do |line|
+							puts "    #{line}"
+						end
+					end
 				end
 			else
 				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
@@ -87,8 +88,7 @@ class BitWizardCTL
 
 				@boards[temp.address] = temp
 				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})"
-			rescue ArgumentError => ex
-				puts ex
+			rescue ArgumentError
 			end
 		end
 	end
@@ -102,13 +102,14 @@ class BitWizardCTL
 	end
 
 	def cmd_eeprom(*args)
-		if args.count == 0 or args.count == 1 and args[0].is_a? NilClass then
+		if args.count == 0 then
 			@boards.each do |addr, board|
 				puts "0x#{board.address.to_s(16)}: #{board.read(0x2, 4).pack("l>")}"
 			end
 		else
 			args.each do |addr|
-				addr = eval "#{addr}" if /^0x[0-9]{1,2}$/ =~ addr
+				addr = eval "#{addr}" if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+				p addr
 				next unless (0..255).include? addr
 				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr.to_i, :skip_check => true, :bus => Options[:bus]).read(0x2, 4).pack("l>")}"
 			end
@@ -122,7 +123,7 @@ class BitWizardCTL
 		addr, port = *args if args.count == 2
 		port = port.to_i
 
-		addr = eval "#{addr}" if /^0x[0-9]{1,2}$/ =~ addr
+		addr = eval "#{addr}" if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
 		raise ArgumentError.new "Value must be between 0 and 100" if value and not (0..100).include? value
 
 		board = @boards[addr] if @boards.has_key? addr
