@@ -81,7 +81,7 @@ class BitWizardCTL
 		@boards = { }
 		(0..0xff).step(2) do |address|
 			begin
-				temp = BitWizard::Board.detect address, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
+				temp = BitWizard::Board.detect :address => address, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
 				next unless temp.valid?
 
 				@boards[temp.address] = temp
