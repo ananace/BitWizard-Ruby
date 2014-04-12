@@ -28,6 +28,45 @@ class BitWizardCTL
 		:motor => { :args => "<addr> <'A'/'B'> <speed/'stop'>", :text => "Change speed of a motor on the specified board" }
 	}
 
+	def initialize(args)
+		@defaultlogger = BasicLogger.new if Options[:verbose]
+		@boards = {}
+	end
+
+	def run!
+		if Options[:scan] then
+			cmd_scan
+			puts
+		end
+
+		print "[BitWizard]\# "
+		STDIN.each_line do |line|
+			run_cmd!(*line.split)
+
+			print "[BitWizard]\# "
+		end
+	end
+
+	def run_cmd!(*args)
+		command = args.shift
+		if respond_to? "cmd_#{command}".to_sym then
+			begin
+				send("cmd_#{command}".to_sym, *args)
+			rescue ArgumentError => ex
+				puts "  \e[31m#{ex}\e[0m"
+				if Options[:verbose] then
+					ex.backtrace.each do |line|
+						puts "    #{line}"
+					end
+				end
+			end
+		else
+			puts "Unknown command '#{command}', try 'help' for a list of valid ones"
+		end
+	end
+
+	private
+
 	def parse_addr(addr)
 		addr.to_i
 		eval addr if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
@@ -43,56 +82,6 @@ class BitWizardCTL
 		end
 
 		raise ArgumentError.new "No valid board on 0x#{addr.to_s(16)}" unless board.valid?
-	end
-
-	def initialize(args)
-		@defaultlogger = BasicLogger.new if Options[:verbose]
-		@boards = {}
-		if args.count == 0 then
-			cmd_scan if Options[:scan]
-			puts if Options[:scan]
-
-			print "[BitWizard]\# "
-			STDIN.each_line do |line|
-				data = line.split
-				command = data.shift
-				arguments = data[0] if data.count == 1
-				arguments = data[0..-1] if data.count > 1
-
-				if respond_to? "cmd_#{command}".to_sym then
-					begin
-						send("cmd_#{command}".to_sym, *arguments)
-					rescue ArgumentError => ex
-						puts "  \e[31m#{ex}\e[0m"
-						if Options[:verbose] then
-							ex.backtrace.each do |line|
-								puts "    #{line}"
-							end
-						end
-					end
-				else
-					puts "Unknown command '#{command}', try 'help' for a list of valid ones"
-				end
-
-				print "[BitWizard]\# "
-			end
-		else
-			command = args.shift
-			if respond_to? "cmd_#{command}".to_sym then
-				begin
-					send("cmd_#{command}".to_sym, *args)
-				rescue ArgumentError => ex
-					puts "  \e[31m#{ex}\e[0m"
-					if Options[:verbose] then
-						ex.backtrace.each do |line|
-							puts "    #{line}"
-						end
-					end
-				end
-			else
-				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
-			end
-		end
 	end
 
 	def cmd_help(*)
@@ -245,37 +234,46 @@ class BitWizardCTL
 
 end
 
-OptionParser.new do |opts|
-	opts.banner = "Usage: #{File.basename($0)} [options] [command [arguments]]"
-	opts.separator ""
-	opts.separator "Options:"
+if __FILE__ == $0 then
+	OptionParser.new do |opts|
+		opts.banner = "Usage: #{File.basename($0)} [options] [command [arguments]]"
+		opts.separator ""
+		opts.separator "Options:"
 
-	opts.on("-i", "--i2c", "Use I2C instead of SPI") do |i|
-		Options[:bus] = :i2c
+		opts.on("-i", "--i2c", "Use I2C instead of SPI") do |i|
+			Options[:bus] = :i2c
+		end
+
+		opts.on("-s", "--skip", "Skip the scan on start") do
+			Options[:scan] = false
+		end
+
+		opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+			Options[:verbose] = v
+		end
+
+		opts.on("-h", "--help", "Shows this text") do
+			puts opts
+			exit
+		end
+
+		opts.separator ""
+		opts.separator "Commands:"
+
+		BitWizardCTL::DetailedHelp.each do |cmd, help|
+			opts.separator "  #{cmd}#{help.has_key? :args and " #{help[:args]}" or ""}"
+			opts.separator "    #{help[:text]}"
+
+		end
+	end.parse!
+
+	ctl = BitWizardCTL.new
+
+	if ARGV.count > 0 then
+		ctl.run_cmd!(*ARGV)
+	else
+		ctl.run!
 	end
 
-	opts.on("-s", "--skip", "Skip the scan on start") do
-		Options[:scan] = false
-	end
-
-	opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-		Options[:verbose] = v
-	end
-
-	opts.on("-h", "--help", "Shows this text") do
-		puts opts
-		exit
-	end
-
-	opts.separator ""
-	opts.separator "Commands:"
-
-	BitWizardCTL::DetailedHelp.each do |cmd, help|
-		opts.separator "  #{cmd}#{help.has_key? :args and " #{help[:args]}" or ""}"
-		opts.separator "    #{help[:text]}"
-
-	end
-end.parse!
-
-BitWizardCTL.new ARGV
-puts
+	puts
+end
