@@ -123,7 +123,7 @@ module BitWizard
 					break
 				end
 			end
-			raise ArgumentError.new "Don't know what board '#{@type}' is." unless found_board and @type != :auto_detect
+			raise ArgumentError.new "Don't know what board '#{@type}' is." if not found_board and @type != :auto_detect
 			raise ArgumentError.new "Board type is 'auto_detect', but invalid address #{@address} given." if @type == :auto_detect and not (0..255).include? @address
 
 			identifier = read(0x01, 20).pack("C*").split("\0")[0]
@@ -159,7 +159,7 @@ module BitWizard
 			data = PiPiper::Spi.begin do |spi|
 				spi.write @address | 1, reg, *Array.new(count, 0)
 			end[2..-1]
-			@logger.debug("SPI [0x#{reg.to_s(16)}] --> #{data}")
+			@logger.debug("SPI [0x#{reg.to_s(16)}] --> #{data.pack("C*")}")
 			data
 		end
 
@@ -175,7 +175,7 @@ module BitWizard
 				i2c.write({ :to => @address | 1, :data => [reg, *Array.new(count, 0)] })
 				i2c.read count
 			end
-			@logger.debug("I2C [0x#{reg.to_s(16)}] --> #{data}")
+			@logger.debug("I2C [0x#{reg.to_s(16)}] --> #{data.pack("C*")}")
 			data
 		end
 	end

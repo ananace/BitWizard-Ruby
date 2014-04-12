@@ -11,8 +11,10 @@ module BitWizard
 			# @option options [Number] :num The number of FETs on the board (3 or 7)
 			def initialize(options)
 				options = {
-					:num => 3
-				}.merge(options).merge({
+					:num => 3,
+					:bus => :spi
+				}.merge(options)
+				options = options.merge({
 					:type => "#{options[:bus]}_#{options[:num]}fets".to_sym,
 				})
 
@@ -58,9 +60,9 @@ module BitWizard
 
 				port = 2**(port-1)
 
-				curPWM = read!(0x5f, 1)[0]
+				curPWM = read(0x5f, 1)[0]
 				tgtPWM = curPWM & ~port
-				write!(0x5f, tgtPWM)
+				write(0x5f, tgtPWM)
 
 				true
 			end
@@ -69,7 +71,7 @@ module BitWizard
 			#
 			# @return [Array] An array containing the port numbers with PWM enabled
 			def PWM?
-				curPWM = read!(0x5f, 1)[0]
+				curPWM = read(0x5f, 1)[0]
 
 				ret = []
 				(1..@num_FETs).each do |port|
@@ -85,7 +87,7 @@ module BitWizard
 			def [](port)
 				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 
-				return read!(0x50 + (port-1), 1)
+				return read(0x50 + (port-1), 1)
 			end
 
 			#Sets the PWM value on the specified port
@@ -96,7 +98,7 @@ module BitWizard
 				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 				raise ArgumentError.new "Invalid value #{value}" unless value.is_a? Fixnum and (0..255).include? value
 
-				write!(0x50 + (port-1), value)
+				write(0x50 + (port-1), value)
 			end
 
 		end
