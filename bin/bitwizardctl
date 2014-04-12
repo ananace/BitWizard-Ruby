@@ -77,12 +77,15 @@ class BitWizardCTL
 		found = []
 
 		(0..0xff).step(2) do |address|
-			temp = BitWizard::Board.new :address => address, :bus => Options[:bus]
+			begin
+				temp = BitWizard::Board.new :address => address, :bus => Options[:bus]
 
-			temp = temp.known_board[:constructor].call(:address => address) if temp.valid?
-			temp.logger = @defaultlogger if Options[:verbose]
-			found << temp
-			puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})" if temp.valid? 
+				temp = temp.known_board[:constructor].call(:address => address) if temp.valid?
+				temp.logger = @defaultlogger if Options[:verbose]
+				found << temp
+				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})" if temp.valid? 
+			rescue
+			end
 		end
 
 		@boards = found
