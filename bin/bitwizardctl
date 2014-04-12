@@ -35,22 +35,40 @@ class BitWizardCTL
 
 	def initialize(args)
 		@defaultlogger = BasicLogger.new if Options[:verbose]
-		@boards = {}
-		cmd_scan if Options[:scan]
-		puts if Options[:scan]
+		if args.count == 0 then
+			@boards = {}
+			cmd_scan if Options[:scan]
+			puts if Options[:scan]
 
-		puts "BitWizard control utility"
+			print "[BitWizard]\# "
+			STDIN.each_line do |line|
+				data = line.split
+				command = data.shift
+				arguments = data[0] if data.count == 1
+				arguments = data[0..-1] if data.count > 1
 
-		print "> "
-		STDIN.each_line do |line|
-			data = line.split
-			command = data.shift
-			arguments = data[0] if data.count == 1
-			arguments = data[0..-1] if data.count > 1
+				if respond_to? "cmd_#{command}".to_sym then
+					begin
+						send("cmd_#{command}".to_sym, *arguments)
+					rescue ArgumentError => ex
+						puts "  \e[31m#{ex}\e[0m"
+						if Options[:verbose] then
+							ex.backtrace.each do |line|
+								puts "    #{line}"
+							end
+						end
+					end
+				else
+					puts "Unknown command '#{command}', try 'help' for a list of valid ones"
+				end
 
+				print "[BitWizard]\# "
+			end
+		else
+			command = args.shift
 			if respond_to? "cmd_#{command}".to_sym then
 				begin
-					send("cmd_#{command}".to_sym, *arguments)
+					send("cmd_#{command}".to_sym, *args)
 				rescue ArgumentError => ex
 					puts "  \e[31m#{ex}\e[0m"
 					if Options[:verbose] then
@@ -62,8 +80,6 @@ class BitWizardCTL
 			else
 				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
 			end
-
-			print "> "
 		end
 	end
 
@@ -255,7 +271,7 @@ OptionParser.new do |opts|
 	opts.separator "Commands:"
 
 	BitWizardCTL::DetailedHelp.each do |cmd, help|
-		opts.separator "  #{cmd}#{help.has_key? :args and " #{help[:args]}"}"
+		opts.separator "  #{cmd}#{help.has_key? :args and " #{help[:args]}" or ""}"
 		opts.separator "    #{help[:text]}"
 
 	end

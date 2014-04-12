@@ -170,7 +170,7 @@ module BitWizard
 		end
 
 		def spi_write(reg, value)
-			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.inspect}")
+			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.unpack("C*").inspect or value.inspect}")
 			PiPiper::Spi.begin do |spi|
 				spi.write @address, reg, value
 			end
@@ -185,7 +185,7 @@ module BitWizard
 		end
 
 		def i2c_write(reg, value)
-			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.inspect}")
+			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.unpack("C*").inspect or value.inspect}")
 			PiPiper::I2c.begin do |i2c|
 				i2c.write({ :to => @address, :data => [reg, value] })
 			end
