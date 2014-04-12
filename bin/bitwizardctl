@@ -45,9 +45,9 @@ class BitWizardCTL
 
 			if respond_to? "cmd_#{command}".to_sym then
 				begin
-					send "cmd_#{command}".to_sym, arguments
+					send("cmd_#{command}".to_sym, *arguments)
 				rescue ArgumentError => ex
-					puts "\e[31m#{ex}\3[0m"
+					puts "\e[31m#{ex}\e[0m"
 					puts ex.backtrace if Options[:verbose]
 				end
 			else
@@ -63,7 +63,8 @@ class BitWizardCTL
 		DetailedHelp.each do |cmd,data|
 			curlen = cmd.length
 			curlen += data[:args].length if data.has_key? :args
-			longestcmd = curlen if curlen > longestcmd end
+			longestcmd = curlen if curlen > longestcmd
+		end
 
 		puts "Available commands:"
 		DetailedHelp.each do |cmd, help|
