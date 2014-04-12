@@ -28,7 +28,7 @@ class BitWizardCTL
 		:motor => { :args => "<addr> <'A'/'B'> <speed/'stop'>", :text => "Change speed of a motor on the specified board" }
 	}
 
-	def initialize(args)
+	def initialize
 		@defaultlogger = BasicLogger.new if Options[:verbose]
 		@boards = {}
 	end
