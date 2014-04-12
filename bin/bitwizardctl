@@ -18,15 +18,19 @@ Options = {
 class BitWizardCTL
 
 	DetailedHelp = {
-		:scan => "Scans for available boards",
-		:exit => "Exits the program",
-		:help => "Lists all the valid commands, or detailed help for a given command"
+		:scan => { :text => "Scans for available boards" },
+		:list => { :text => "Lists all the found boards" },
+		:eeprom => { :args => "[addrs]", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
+		:exit => { :text => "Exits the program" },
+		:help => { :text => "Lists all the valid commands, or detailed help for a given command" }
 	}
 
 	def initialize(args)
 		@defaultlogger = BasicLogger.new if Options[:verbose]
-		@boards = []
+		@boards = {}
 		@boards = cmd_scan if Options[:scan]
+
+		puts "", "BitWizardCTL "
 
 		print "> "
 		STDIN.each_line do |line|
@@ -45,26 +49,16 @@ class BitWizardCTL
 		end
 	end
 
-	def cmd_help(*args)
-		args = args.to_a unless args.is_a? Array
-		found_help = false
-		args.each do |arg|
-			next unless arg.is_a? String
-			puts arg
-			puts "  #{DetailedHelp[arg.to_sym]}" if DetailedHelp.has_key? arg.to_sym
-			found_help = true if DetailedHelp.has_key? arg.to_sym
-		end
+	def cmd_help(*)
+		longestcmd = 0
+		DetailedHelp.each do |cmd,data|
+			curlen = cmd.length
+			curlen += data[:args].length if data.has_key? :args
+			longestcmd = curlen if curlen > longestcmd end
 
-		unless found_help
-			puts "Valid commands are:"
-			i = 0
-			DetailedHelp.each do |cmd, help|
-				print "#{cmd} "
-				i += 1
-
-				puts if i % 5 == 0
-			end
-			puts
+		puts "Available commands:"
+		DetailedHelp.each do |cmd, help|
+			puts "  #{cmd} #{help[:args] if help.has_key? :args} #{" " * (longestcmd - cmd.length - (help[:args] and help[:args].length or 0))}#{help[:text]}"
 		end
 	end
 
@@ -74,7 +68,6 @@ class BitWizardCTL
 
 	def cmd_scan(*)
 		puts "Scanning for boards..."
-		found = []
 
 		(0..0xff).step(2) do |address|
 			begin
@@ -82,13 +75,34 @@ class BitWizardCTL
 
 				temp = temp.known_board[:constructor].call(:address => address) if temp.valid?
 				temp.logger = @defaultlogger if Options[:verbose]
-				found << temp
+				@boards[temp.address] = temp
 				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})" if temp.valid? 
 			rescue
 			end
 		end
+	end
 
-		@boards = found
+	def cmd_list(*)
+		puts "Boards:"
+
+		@boards.each do |board|
+			puts "0x#{board.address}: #{board.type} (#{board.version})"
+		end
+	end
+
+	def cmd_eeprom(*args)
+		if args.count == 0 or args.count == 1 and args[0].is_a? NilClass then
+			@boards.each do |board|
+				puts "0x#{board.address.to_s(16)}: #{board.read(0x2, 4).pack("l>")}"
+			end
+		else
+			args.each do |addr|
+				next unless /^(0x[0-9]{1,2}|[0-9]{1,3})$/ =~ addr
+				addr = eval "#{addr}"
+				next unless (0..255).include? addr
+				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr.to_i, :skip_check => true).read(0x2, 4).pack("l>")}"
+			end
+		end
 	end
 
 end
