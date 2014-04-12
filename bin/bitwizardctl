@@ -9,19 +9,118 @@ class BasicLogger
 	end
 end
 
-options = {}
+Options = {
+	:bus => :spi,
+	:verbose => false,
+	:scan => true
+}
+
+class BitWizardCTL
+
+	DetailedHelp = {
+		:scan => "Scans for available boards",
+		:exit => "Exits the program",
+		:help => "Lists all the valid commands, or detailed help for a given command"
+	}
+
+	def initialize(args)
+		@defaultlogger = BasicLogger.new if Options[:verbose]
+		@boards = []
+		@boards = cmd_scan if Options[:scan]
+
+		print "> "
+		STDIN.each_line do |line|
+			data = line.split
+			command = data[0]
+			arguments = data[1] if data.count > 1
+			arguments = data[1..-1] if data.count > 2
+
+			if respond_to? "cmd_#{command}".to_sym then
+				send "cmd_#{command}".to_sym, arguments
+			else
+				puts "Unknown command '#{command}', try 'help' for a list of valid ones"
+			end
+
+			print "> "
+		end
+	end
+
+	def cmd_help(*args)
+		args = args.to_a unless args.is_a? Array
+		found_help = false
+		args.each do |arg|
+			next unless arg.is_a? String
+			puts arg
+			puts "  #{DetailedHelp[arg.to_sym]}" if DetailedHelp.has_key? arg.to_sym
+			found_help = true if DetailedHelp.has_key? arg.to_sym
+		end
+
+		unless found_help
+			puts "Valid commands are:"
+			i = 0
+			DetailedHelp.each do |cmd, help|
+				print "#{cmd} "
+				i += 1
+
+				puts if i % 5 == 0
+			end
+			puts
+		end
+	end
+
+	def cmd_exit(*)
+		exit
+	end
+
+	def cmd_scan(*)
+		puts "Scanning for boards..."
+		found = []
+
+		(0..0xff).step(2) do |address|
+			temp = BitWizard::Board.new :address => address, :bus => Options[:bus]
+
+			temp = temp.known_board[:constructor].call(:address => address) if temp.valid?
+			temp.logger = @defaultlogger if Options[:verbose]
+			found << temp
+			puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})" if temp.valid? 
+		end
+
+		@boards = found
+	end
+
+end
+
 OptionParser.new do |opts|
-	opts.banner = "Usage: #{$0} [options] [command [arguments]]..."
+	opts.banner = "Usage: #{File.basename($0)} [options] [command [arguments]]"
+	opts.separator ""
+	opts.separator "Options:"
+
+	opts.on("-i", "--i2c", "Use I2C instead of SPI") do |i|
+		Options[:bus] = :i2c
+	end
+
+	opts.on("-s", "--skip", "Skip the scan on start") do
+		Options[:scan] = false
+	end
 
 	opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-		options[:verbose] = v
+		Options[:verbose] = v
 	end
 
 	opts.on("-h", "--help", "Shows this text") do
 		puts opts
 		exit
 	end
+
+	opts.separator ""
+	opts.separator "Commands:"
+
+	BitWizardCTL::DetailedHelp.each do |cmd, help|
+		opts.separator "  #{cmd}"
+		opts.separator "    #{help}"
+
+	end
 end.parse!
 
-
-
+BitWizardCTL.new ARGV
+puts

@@ -4,19 +4,8 @@ module BitWizard
 
 	class Board
 
-		attr_reader :type, :version, :address, :bus
-
-		def Board.scan(bus=:spi)
-			found = []
-			
-			(0..0xff).step(2) do |address|
-				temp = Board.new :address => address
-
-				found << Boards[temp.type][:constructor].call(:address => address) if temp.valid?
-			end
-
-			found
-		end
+		attr_reader :type, :version, :address, :bus, :known_board
+		attr_accessor :logger
 
 		#Creates a generic board handle for reading and writing directly.
 		#
@@ -47,7 +36,7 @@ module BitWizard
 
 		#Returns if the board has a valid communication address
 		def valid?
-			return false if @address == -1
+			return false if @address == -1 or @type == :auto_detect
 			true
 		end
 
@@ -133,6 +122,7 @@ module BitWizard
 					if name =~ identifier then
 						@type, @version = *identifier.split
 						@type = @type.to_sym
+						@known_board = data
 						break
 					end
 				end
@@ -141,6 +131,7 @@ module BitWizard
 				Known_Boards.each do |name, data|
 					if name =~ identifier then
 						@version = identifier.split[1]
+						@known_board = data
 						raise ArgumentError.new "Board reports type #{real_name}, which does not match #{@type}" unless found_board[:data] == data
 						break
 					end
