@@ -35,8 +35,8 @@ class BitWizardCTL
 
 	def initialize(args)
 		@defaultlogger = BasicLogger.new if Options[:verbose]
+		@boards = {}
 		if args.count == 0 then
-			@boards = {}
 			cmd_scan if Options[:scan]
 			puts if Options[:scan]
 
