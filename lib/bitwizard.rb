@@ -4,7 +4,7 @@ module BitWizard
 
 	class Board
 
-		attr_accessor :type, :address, :bus
+		attr_accessor :type, :version, :address, :bus
 
 		def Board.scan(bus=:spi)
 			found = []
@@ -131,7 +131,8 @@ module BitWizard
 			if @type == :auto_detect then
 				Known_Boards.each do |name, data|
 					if name =~ identifier then
-						@type = identifier.to_sym
+						@type, @version = *identifier.split
+						@type = @type.to_sym
 						break
 					end
 				end
@@ -139,6 +140,7 @@ module BitWizard
 			else
 				Known_Boards.each do |name, data|
 					if name =~ identifier then
+						@version = identifier.split[1]
 						raise ArgumentError.new "Board reports type #{real_name}, which does not match #{@type}" unless found_board[:data] == data
 						break
 					end

@@ -6,8 +6,11 @@ module BitWizard
 			#Create an instance of a Motor board
 			#
 			# @param [Hash] options A Hash of options.
-			def initialize(options)
-				merge(options).merge({
+			def initialize(options={})
+				options = {
+					:bus => :spi
+				}.merge(options)
+				options = options.merge({
 					:type => "#{options[:bus]}_motor".to_sym,
 				})
 
@@ -40,6 +43,8 @@ module BitWizard
 			#
 			# @param [Symbol] port The port to stop (:A or :B)
 			def motor_stop(port)
+				raise ArgumentError.new "Port must be :A or :B" unless port == :A or port == :B
+
 				motor_start(port, 0)
 			end
 
@@ -79,6 +84,7 @@ module BitWizard
 			#
 			# @param [Number] delay The new stepdelay, in tenths of a millisecond (maximum 255 - 25ms between steps)
 			def stepper_delay=(delay)
+				raise ArgumentError.new "Delay must be an integer between 0 and 255" unless delay.is_a? Fixnum and (0..255).include? delay
 				write(0x43, delay)
 			end
 
@@ -87,7 +93,7 @@ module BitWizard
 			# @param [Symbol] port The port to read from (1..4)
 			# @return [Number] The PWM value on the port
 			def [](port)
-				raise ArgumentError.new "Port must be a number between 1 and 4" unless port.is_a? Fixnum and (1..4).include? port
+				raise ArgumentError.new "Port must be an integer between 1 and 4" unless port.is_a? Fixnum and (1..4).include? port
 
 				read(0x50+(port-1), 1)[0]
 			end
@@ -97,8 +103,8 @@ module BitWizard
 			# @param [Number] port The port to set (1..4)
 			# @param [Number] value The PWM value to set on the port (0..255)
 			def []=(port, value)
-				raise ArgumentError.new "Port must be a number between 1 and 4" unless port.is_a? Fixnum and (1..4).include? port
-				
+				raise ArgumentError.new "Port must be an integer between 1 and 4" unless port.is_a? Fixnum and (1..4).include? port
+
 				write(0x50+(port-1), value)
 			end
 

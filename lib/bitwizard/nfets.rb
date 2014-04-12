@@ -9,7 +9,7 @@ module BitWizard
 			#
 			# @param [Hash] options A Hash of options.
 			# @option options [Number] :num The number of FETs on the board (3 or 7)
-			def initialize(options)
+			def initialize(options={})
 				options = {
 					:num => 3,
 					:bus => :spi
@@ -28,20 +28,27 @@ module BitWizard
 			#Enables Pulse Width Modulation on the specified port
 			#
 			# @param [Number|Array] port The port/ports to enable PWM on
-			def enablePWM!(port)
+			def enablePWM!(*port)
+				case port.count
+				when 0
+					raise ArgumentError.new "wrong number of arguments"
+				when 1
+					port = port.first
+				end
+
 				if port.is_a? Array then
 					port.each do |port|
 						enablePWM! port
 					end
-					return
+					return true
 				end
-				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
+				raise ArgumentError.new "Port must be an integer between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 
 				port = 2**(port-1)
 
-				curPWM = read!(0x5f, 1)[0]
+				curPWM = read(0x5f, 1)[0]
 				tgtPWM = curPWM | port
-				write!(0x5f, tgtPWM)
+				write(0x5f, tgtPWM)
 
 				true
 			end
@@ -49,14 +56,21 @@ module BitWizard
 			#Disables Pulse Width Modulation on the specified port
 			#
 			# @param [Number|Array] port The port/ports to disable PWM on
-			def disablePWM!(port)
+			def disablePWM!(*port)
+				case port.count
+				when 0
+					raise ArgumentError.new "wrong number of arguments"
+				when 1
+					port = port.first
+				end
+
 				if port.is_a? Array then
 					port.each do |port|
 						disablePWM! port
 					end
-					return
+					return true
 				end
-				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
+				raise ArgumentError.new "Port must be an integer between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 
 				port = 2**(port-1)
 
@@ -83,9 +97,9 @@ module BitWizard
 			#Returns the PWM value on the specified port
 			#
 			# @param [Number] port The port to read the value from
-			# @return [Number] The PWM value on the port (0x00..0xff)
+			# @return [Number] The PWM value on the port (0..255)
 			def [](port)
-				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
+				raise ArgumentError.new "Port must be an integer between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 
 				return read(0x50 + (port-1), 1)
 			end
@@ -93,10 +107,10 @@ module BitWizard
 			#Sets the PWM value on the specified port
 			#
 			# @param [Number] port The port to set the value on
-			# @param [Number] value The PWM value to set (0x00..0xff)
+			# @param [Number] value The PWM value to set (0..255)
 			def []=(port, value)
-				raise ArgumentError.new "Port must be a number between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
-				raise ArgumentError.new "Invalid value #{value}" unless value.is_a? Fixnum and (0..255).include? value
+				raise ArgumentError.new "Port must be an integer between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
+				raise ArgumentError.new "Value must be an integer between 0 and 255" unless value.is_a? Fixnum and (0..255).include? value
 
 				write(0x50 + (port-1), value)
 			end
