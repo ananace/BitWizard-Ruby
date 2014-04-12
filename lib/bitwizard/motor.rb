@@ -5,7 +5,7 @@ module BitWizard
 
 			#Create an instance of a Motor board
 			#
-			# @param [Hash] options A Hash of options.
+			# @param [optional, Hash] options A Hash of options.
 			def initialize(options={})
 				options = {
 					:bus => :spi
@@ -23,7 +23,7 @@ module BitWizard
 			# @param [Number] value The direction and speed of the motor (-255..255)
 			def motor_start(port, value)
 				raise ArgumentError.new("Port must be :A or :B") unless port == :A or port == :B
-				raise ArgumentError.new("Value must be a number beween -255 and 255") unless (-255..255).include? value
+				raise ArgumentError.new("Value must be an integer beween -255 and 255") unless value.is_a? Fixnum and (-255..255).include? value
 
 				basereg = 0x20
 				basereg = 0x30 if port == :B

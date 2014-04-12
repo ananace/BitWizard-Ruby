@@ -7,7 +7,7 @@ module BitWizard
 
 			#Create an instance of a FET board
 			#
-			# @param [Hash] options A Hash of options.
+			# @param [optional, Hash] options A Hash of options.
 			# @option options [Number] :num The number of FETs on the board (3 or 7)
 			def initialize(options={})
 				options = {
