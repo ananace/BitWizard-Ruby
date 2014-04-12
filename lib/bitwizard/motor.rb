@@ -93,6 +93,35 @@ module BitWizard
 				write(0x43, delay)
 			end
 
+			#Enables Pulse Width Modulation on the specified port
+			#
+			# @param [Number|Array] port The port/ports to enable PWM on
+			def pwm_enable(*port)
+				false # Board doesn't support enabling/disabling PWM
+			end
+
+			#Disables Pulse Width Modulation on the specified port
+			#
+			# @param [Number|Array] port The port/ports to disable PWM on
+			def pwm_disable(*port)
+				false # Board doesn't support enabling/disabling PWM
+			end
+
+			#Returns the ports that have PWM enabled
+			#
+			# @return [Array] An array containing the port numbers with PWM enabled
+			def pwm_ports
+				[1, 2, 3, 4] # Board doesn't support enabling/disabling PWM
+			end
+
+			#Checks if a port has PWM enabled
+			#
+			# @param [Number] port The port to check
+			# @return [Boolean] Is the port enabled for PWM control
+			def pwm_enabled?(port)
+				pwm_ports.include? port
+			end
+
 			#Read a PWM value from a port
 			#
 			# @param [Symbol] port The port to read from (1..4)

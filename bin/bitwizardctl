@@ -23,8 +23,9 @@ class BitWizardCTL
 		:eeprom => { :args => "[addrs]", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
 		:exit => { :text => "Exits the program" },
 		:help => { :text => "Lists all the valid commands, or detailed help for a given command" },
-		:pwm => { :args => "<addr> [port [value/on/off]]", :text => "Get/Set the PWM value for a certain port on a board" },
-		:stepper => { :args => "<addr> <current/target/delay> [value]", :text => "Get/Set a value for a stepper motor on the specified board" }
+		:pwm => { :args => "<addr> [port [value/'on'/'off']]", :text => "Get/Set the PWM value for a certain port on a board" },
+		:stepper => { :args => "<addr> <'current'/'target'/'delay'> [value]", :text => "Get/Set a value for a stepper motor on the specified board" },
+		:motor => { :args => "<addr> <'A'/'B'> <speed/'stop'>", :text => "Change speed of a motor on the specified board" }
 	}
 
 	def parse_addr(addr)
@@ -141,23 +142,27 @@ class BitWizardCTL
 		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support PWM actions" unless board.known_board[:features].include? :pwm
 
+		puts "0x#{addr.to_s(16)}:"
+
 		if port then
 			if value.is_a? String then
-				cur_val = board.pwm_enabled? port
-				board.pwm_disable port if value == "off"
-				board.pwm_enable port if value == "on"
-				puts "0x#{addr.to_s(16)}'s PWM on port \##{port} was #{(value == "on" and cur_val) or (value == "off" and not cur_val) ? "already " : ""}#{value == "off" ? "disabled" : "enabled"}."
+				succ = board.pwm_disable port if value == "off"
+				succ = board.pwm_enable port if value == "on"
+				puts "  PWM \##{port}: #{value == "off" ? "disabled" : "enabled"}." if succ
+				pust "  Failed to change PWM status on port \##{port}" unless succ
 			else
 				ports = board.pwm_ports
-				puts "0x#{addr.to_s(16)} doesn't have PWM enabled on port #{port}" unless ports.include? port
-				return unless ports.include? port
+				unless ports.include? port
+					puts "  PWM not enabled on port #{port}"
+					return
+				end
 
 				board[port] = value if value
-				puts "0x#{addr.to_s(16)}'s PWM[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+				puts "  PWM \##{port}: #{((board[port] / 255.0) * 100).round(2)}% (#{board[port]})"
 			end
 		else
 			board.pwm_ports.each do |port|
-				puts "0x#{addr.to_s(16)}'s PWM[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+				puts "  PWM \##{port}: #{((board[port] / 255.0) * 100).round(2)}% (#{board[port]})"
 			end
 		end
 	end
@@ -193,6 +198,33 @@ class BitWizardCTL
 		when :delay
 			board.stepper_delay = value if value
 			puts "0x#{addr.to_s(16)}'s step delay: #{board.stepper_delay / 10.0}ms (#{board.stepper_delay})"
+		end
+	end
+
+	def cmd_motor(*args)
+		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 3)" unless args.count == 3
+
+		addr, motor, value = *args
+		motor = motor.to_sym
+		value = vaule.to_i unless value == "stop"
+		addr = parse_addr addr
+
+		raise ArgumentError.new "Motor must be 'A' or 'B'" unless [:A,:B].include? motor
+		raise ArgumentError.new "Value must be between -255 - 255" unless value.is_a? String or (-255..255).include value
+		
+		board = @boards[addr] if @boards.has_key? addr
+		unless board then
+			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
+			@boards[addr] = board if board.valid?
+		end
+
+		raise ArgumentError.new "No valid board on the given address" unless board.valid?
+		raise ArgumentError.new "Board doesn't support motor actions" unless board.known_board[:features].include? :motor
+
+		if value.is_a? String
+			board.motor_stop motor
+		else
+			board.motor_spin motor, value
 		end
 	end
 

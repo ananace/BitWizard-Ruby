@@ -175,12 +175,12 @@ module BitWizard
 	Known_Boards[/(spi|i2c)_3fets/] = {
 		:default_address => 0x8a,
 		:constructor => Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ :num => 3 }) },
-		:features => [ :inputs, :outputs, :stepper, :pwm ]
+		:features => [ :input, :output, :stepper, :pwm ]
 	}
 	Known_Boards[/(spi|i2c)_7fets/] = {
 		:default_address => 0x88,
 		:constructor => Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ :num => 7 }) },
-		:features => [ :inputs, :outputs, :stepper, :pwm ]
+		:features => [ :input, :output, :stepper, :pwm ]
 	}
 
 end
