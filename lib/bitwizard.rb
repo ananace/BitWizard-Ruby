@@ -4,6 +4,26 @@ module BitWizard
 
 	class Board
 
+		#Detects the type of board on the given address and creates the correct handler class for it.
+		#
+		# @param [Number] address The address to check.
+		# @param [optional, Hash] options A Hash of options.
+		# @option options [Symbol] :bus The type of bus the board is connected on. (:spi or :i2c)
+		# @option options [Logger] :logger A logger you want to attach to the board.
+		def Board.detect(address, options={})
+			options = {
+				:bus => :spi,
+				:logger => NullLogger.new
+			}.merge(options).merge({
+				:address => address,
+				:type => :auto_detect,
+				:skip_check => false
+			})
+
+			temp = BitWizard::Board.new options
+			temp.known_board[:constructor].call(options) if temp.valid?
+		end
+
 		attr_reader :type, :version, :address, :bus, :known_board
 		attr_accessor :logger
 

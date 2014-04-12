@@ -14,4 +14,6 @@ Gem::Specification.new do |s|
 	]
 	s.license = "MIT"
 
+
+	s.add_development_dependency 'rspec'
 end
