@@ -29,7 +29,7 @@ class BitWizardCTL
 	def initialize(args)
 		@defaultlogger = BasicLogger.new if Options[:verbose]
 		@boards = {}
-		@boards = cmd_scan if Options[:scan]
+		cmd_scan if Options[:scan]
 
 		puts "", "BitWizardCTL "
 
@@ -115,7 +115,7 @@ class BitWizardCTL
 	end
 
 	def cmd_pwm(*args)
-		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 2..3) given" unless (2..3).include? args.count
+		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 2-3)" unless (2..3).include? args.count
 		addr, port, value = *args if args.count == 3
 		value = value.to_i if value
 		addr, port = *args if args.count == 2
@@ -126,7 +126,7 @@ class BitWizardCTL
 
 		board = @boards[addr] if @boards.has_key? addr
 		unless board then
-			board = BitWizard::Board.detect addr, :bus => Options[:bus]
+			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
 			@boards[addr] = board if board.valid?
 		end
 

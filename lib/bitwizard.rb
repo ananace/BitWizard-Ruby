@@ -21,7 +21,12 @@ module BitWizard
 			})
 
 			temp = BitWizard::Board.new options
-			temp.known_board[:constructor].call(options) if temp.valid?
+			correct = temp.known_board[:constructor].call(options.merge({:skip_check => true})) if temp.valid?
+
+			correct.version = temp.version
+			correct.known_board = temp.known_board
+
+			correct
 		end
 
 		attr_reader :type, :version, :address, :bus, :known_board
