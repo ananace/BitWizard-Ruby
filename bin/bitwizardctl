@@ -87,7 +87,8 @@ class BitWizardCTL
 
 				@boards[temp.address] = temp
 				puts "0x#{address.to_s(16)}: #{temp.type} (#{temp.version})"
-			rescue
+			rescue ArgumentError => ex
+				puts ex
 			end
 		end
 	end

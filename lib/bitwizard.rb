@@ -20,11 +20,14 @@ module BitWizard
 				:skip_check => false
 			})
 
+			options[:logger] = NullLogger.new unless options[:logger]
+
 			temp = BitWizard::Board.new options
 			correct = temp.known_board[:constructor].call(options.merge({:skip_check => true})) if temp.valid?
 
-			correct.version = temp.version
-			correct.known_board = temp.known_board
+			correct.instance_variable_set(:type, temp.type)
+			correct.instance_variable_set(:version, temp.version)
+			correct.instance_variable_set(:known_board, temp.known_board)
 
 			correct
 		end
