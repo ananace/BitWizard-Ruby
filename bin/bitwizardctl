@@ -26,6 +26,11 @@ class BitWizardCTL
 		:pwm => { :args => "<addr> <port> [value]", :text => "Get/Set the PWM value for a certain port on a board" }
 	}
 
+	def parse_addr(addr)
+		addr.to_i
+		eval addr if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+	end
+
 	def initialize(args)
 		@defaultlogger = BasicLogger.new if Options[:verbose]
 		@boards = {}
@@ -108,8 +113,7 @@ class BitWizardCTL
 			end
 		else
 			args.each do |addr|
-				addr = eval "#{addr}" if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
-				p addr
+				addr = parse_addr addr
 				next unless (0..255).include? addr
 				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr.to_i, :skip_check => true, :bus => Options[:bus]).read(0x2, 4).pack("l>")}"
 			end
@@ -123,7 +127,7 @@ class BitWizardCTL
 		addr, port = *args if args.count == 2
 		port = port.to_i
 
-		addr = eval "#{addr}" if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+		addr = parse_addr addr
 		raise ArgumentError.new "Value must be between 0 and 100" if value and not (0..100).include? value
 
 		board = @boards[addr] if @boards.has_key? addr
