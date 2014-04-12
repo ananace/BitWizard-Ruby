@@ -84,7 +84,7 @@ module BitWizard
 			#Returns the ports that have PWM enabled
 			#
 			# @return [Array] An array containing the port numbers with PWM enabled
-			def pwm_enabled?
+			def pwm_ports
 				curPWM = read(0x5f, 1)[0]
 
 				ret = []
@@ -99,7 +99,7 @@ module BitWizard
 			# @param [Number] port The port to check
 			# @return [Boolean] Is the port enabled for PWM control
 			def pwm_enabled?(port)
-				pwm_enabled?.include? port
+				pwm_ports.include? port
 			end	
 
 			#Read the current position of the stepper motor
@@ -131,7 +131,7 @@ module BitWizard
 
 				write(0x41, [position].pack("l>"))
 			end
-			
+
 			#Read the step delay of the stepper motor
 			# 
 			# @return [Number] The stepdelay in tenths of a millisecond
