@@ -28,7 +28,7 @@ module BitWizard
 			#Enables Pulse Width Modulation on the specified port
 			#
 			# @param [Number|Array] port The port/ports to enable PWM on
-			def enablePWM!(*port)
+			def pwm_enable(*port)
 				case port.count
 				when 0
 					raise ArgumentError.new "wrong number of arguments"
@@ -56,7 +56,7 @@ module BitWizard
 			#Disables Pulse Width Modulation on the specified port
 			#
 			# @param [Number|Array] port The port/ports to disable PWM on
-			def disablePWM!(*port)
+			def pwm_disable(*port)
 				case port.count
 				when 0
 					raise ArgumentError.new "wrong number of arguments"
@@ -84,7 +84,7 @@ module BitWizard
 			#Returns the ports that have PWM enabled
 			#
 			# @return [Array] An array containing the port numbers with PWM enabled
-			def PWM?
+			def pwm_enabled?
 				curPWM = read(0x5f, 1)[0]
 
 				ret = []
@@ -94,6 +94,59 @@ module BitWizard
 				ret
 			end
 
+			#Checks if a port has PWM enabled
+			#
+			# @param [Number] port The port to check
+			# @return [Boolean] Is the port enabled for PWM control
+			def pwm_enabled?(port)
+				pwm_enabled?.include? port
+			end	
+
+			#Read the current position of the stepper motor
+			#
+			# @return [Number] The current stepper position
+			def stepper_position
+				read(0x40, 4).unpack("C*").pack("l>")[0]
+			end
+			#Set the current position of the stepper motor, without actually moving it
+			#
+			# @param [Number] position The new position of the stepper motor
+			def stepper_position=(position)
+				raise ArgumentError.new "Position must be an integer" unless position.is_a? Fixnum
+
+				write(0x40, [position].pack("l>"))
+			end
+
+			#Read the target position of the stepper motor
+			#
+			# @return [Number] The target position of the stepper
+			def stepper_target
+				read(0x41, 4).unpack("C*").pack("l>")[0]
+			end
+			#Set the target position of the stepper motor
+			#
+			# @param [Number] position The target position for the stepper motor
+			def stepper_target=(position)
+				raise ArgumentError.new "Position must be an integer" unless position.is_a? Fixnum
+
+				write(0x41, [position].pack("l>"))
+			end
+
+			#Read the step delay of the stepper motor
+			# 
+			# @return [Number] The stepdelay in tenths of a millisecond
+			def stepper_delay
+				read(0x43, 1)[0]
+			end
+			#Set the step delay of the stepper motor
+			#
+			# @param [Number] delay The new stepdelay, in tenths of a millisecond (maximum 255 - 25ms between steps)
+			def stepper_delay=(delay)
+				raise ArgumentError.new "Delay must be an integer between 0 and 255" unless delay.is_a? Fixnum and (0..255).include? delay
+				
+				write(0x43, delay)
+			end
+
 			#Returns the PWM value on the specified port
 			#
 			# @param [Number] port The port to read the value from
@@ -101,7 +154,7 @@ module BitWizard
 			def [](port)
 				raise ArgumentError.new "Port must be an integer between 1 and #{@num_FETs}" unless port.is_a? Fixnum and (1..@num_FETs).include? port
 
-				return read(0x50 + (port-1), 1)
+				return read(0x50 + (port-1), 1)[0]
 			end
 
 			#Sets the PWM value on the specified port

@@ -23,7 +23,8 @@ class BitWizardCTL
 		:eeprom => { :args => "[addrs]", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
 		:exit => { :text => "Exits the program" },
 		:help => { :text => "Lists all the valid commands, or detailed help for a given command" },
-		:pwm => { :args => "<addr> <port> [value]", :text => "Get/Set the PWM value for a certain port on a board" }
+		:pwm => { :args => "<addr> <port> [value]", :text => "Get/Set the PWM value for a certain port on a board" },
+		:stepper => { :args => "<addr> <current/target/delay> [value]", :text => "Get/Set a value for a stepper motor on the specified board" }
 	}
 
 	def parse_addr(addr)
@@ -109,13 +110,13 @@ class BitWizardCTL
 	def cmd_eeprom(*args)
 		if args.count == 0 then
 			@boards.each do |addr, board|
-				puts "0x#{board.address.to_s(16)}: #{board.read(0x2, 4).pack("l>")}"
+				puts "0x#{board.address.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
 			end
 		else
 			args.each do |addr|
 				addr = parse_addr addr
 				next unless (0..255).include? addr
-				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr.to_i, :skip_check => true, :bus => Options[:bus]).read(0x2, 4).pack("l>")}"
+				puts "0x#{addr.to_i.to_s(16)}: #{BitWizard::Board.new(:address => addr, :skip_check => true, :bus => Options[:bus]).read(0x02, 4).pack("C*").unpack("l>")[0]}"
 			end
 		end
 	end
@@ -128,7 +129,7 @@ class BitWizardCTL
 		port = port.to_i
 
 		addr = parse_addr addr
-		raise ArgumentError.new "Value must be between 0 and 100" if value and not (0..100).include? value
+		raise ArgumentError.new "Value must be between 0 and 255" if value and not (0..255).include? value
 
 		board = @boards[addr] if @boards.has_key? addr
 		unless board then
@@ -139,8 +140,42 @@ class BitWizardCTL
 		raise ArgumentError.new "No valid board on the given address" unless board.valid?
 		raise ArgumentError.new "Board doesn't support PWM actions" unless board.known_board[:features].include? :pwm
 
-		board[port] = (value/100.0 * 255).floor if value
-		puts "0x#{addr.to_s(16)}[#{port}] = #{(board[port] / 255.0) * 100}%"
+		board[port] = value if value
+		puts "0x#{addr.to_s(16)}[#{port}] = #{(board[port] / 255.0) * 100}% (#{board[port]})"
+	end
+
+	def cmd_stepper(*args)
+		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 2-3)" unless (2..3).include? args.count
+
+		addr, type, value = *args if args.count == 3
+		value = value.to_i if value
+		addr, type = *args if args.count == 2
+		type = type.to_sym
+
+		addr = parse_addr addr
+
+		raise ArgumentError.new "Value to #{args.count == 3 ? "set" : "read"} must be 'current', 'target', or 'delay'" unless [:current, :target, :delay].include? type
+		
+		board = @boards[addr] if @boards.has_key? addr
+		unless board then
+			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus]
+			@boards[addr] = board if board.valid?
+		end
+
+		raise ArgumentError.new "No valid board on the given address" unless board.valid?
+		raise ArgumentError.new "Board doesn't support stepper actions" unless board.known_board[:features].include? :stepper
+
+		case type
+		when :current
+			board.stepper_current = value if value
+			puts "0x#{addr.to_s(16)}'s current position: #{board.stepper_current}"
+		when :target
+			board.stepper_target = value if value
+			puts "0x#{addr.to_s(16)}'s target position: #{board.stepper_target}"
+		when :delay
+			board.stepper_delay = value if value
+			puts "0x#{addr.to_s(16)}'s step delay: #{board.stepper_delay / 10.0}ms (#{board.stepper_delay})"
+		end
 	end
 
 end
