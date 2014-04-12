@@ -37,8 +37,9 @@ class BitWizardCTL
 		@defaultlogger = BasicLogger.new if Options[:verbose]
 		@boards = {}
 		cmd_scan if Options[:scan]
+		puts if Options[:scan]
 
-		puts "", "BitWizardCTL "
+		puts "BitWizard control utility"
 
 		print "> "
 		STDIN.each_line do |line|
@@ -101,8 +102,6 @@ class BitWizardCTL
 	end
 
 	def cmd_list(*)
-		puts "Boards:"
-
 		@boards.each do |addr, board|
 			puts "0x#{board.address.to_s(16)}: #{board.type} (#{board.version})"
 		end
@@ -152,7 +151,7 @@ class BitWizardCTL
 				pust "  Failed to change PWM status on port \##{port}" unless succ
 			else
 				ports = board.pwm_ports
-				unless ports.include? port
+				unless ports.include? port then
 					puts "  PWM not enabled on port #{port}"
 					return
 				end
@@ -256,8 +255,8 @@ OptionParser.new do |opts|
 	opts.separator "Commands:"
 
 	BitWizardCTL::DetailedHelp.each do |cmd, help|
-		opts.separator "  #{cmd}"
-		opts.separator "    #{help}"
+		opts.separator "  #{cmd}#{help.has_key? :args and " #{help[:args]}"}"
+		opts.separator "    #{help[:text]}"
 
 	end
 end.parse!
