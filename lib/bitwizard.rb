@@ -42,6 +42,7 @@ module BitWizard
 		# @option options [Symbol] :type The board type, defaults to auto detecting. (identifier)
 		# @option options [Symbol] :bus The bus it's connected to. (:spi or :i2c)
 		# @option options [Boolean] :skip_check Skip the self check that runs on creation.
+		# @option options [Number] :clock The clockrate you want to run the communication with.
 		# @option options [Logger] :logger Add a logger here to log data that's sent and received.
 		def initialize(options)
 			options = {
@@ -49,6 +50,7 @@ module BitWizard
 				type: :auto_detect,
 				bus: :spi,
 				skip_check: false,
+				clock: 45000,
 				logger: NullLogger.new
 			}.merge(options)
 
@@ -189,6 +191,7 @@ module BitWizard
 			data = PiPiper::Spi.begin do |spi|
 				spi.write @address | 1, reg, *Array.new(count, 0)
 			end[2..-1]
+			
 			@logger.debug("SPI [0x#{@address.to_s(16)}] --> 0x#{reg.to_s(16)}: #{data.pack("C*").inspect}")
 			data
 		end
@@ -197,6 +200,7 @@ module BitWizard
 			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.pack("C*").inspect or value.inspect}")
 			PiPiper::I2C.begin do |i2c|
 				data = [reg]
+
 				data << value unless value.is_a? Array
 				data += value if value.is_a? Array
 
@@ -205,8 +209,11 @@ module BitWizard
 		end
 
 		def i2c_read(reg, count)
+			PiPiper::I2C.begin do |i2c|
+				i2c.write({ to: @address | 1, data: [reg] })
+			end
 			data = PiPiper::I2C.begin do |i2c|
-				i2c.write({ to: @address | 1, data: [reg, *Array.new(count, 0)] })
+				PiPiper::Platform.driver.i2c_set_address(@address | 1)
 				i2c.read count
 			end
 			@logger.debug("I2C [0x#{@address.to_s(16)}] --> 0x#{reg.to_s(16)}: #{data.pack("C*").inspect}")

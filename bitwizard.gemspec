@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 	s.name = "bitwizard"
-	s.version = "0.0.3"
+	s.version = "0.0.4"
 
 	s.authors = [ "Alexander \"Ace\" Olofsson" ]
 	s.date = "2014-04-12"
