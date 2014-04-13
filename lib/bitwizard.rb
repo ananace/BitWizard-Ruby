@@ -76,6 +76,7 @@ module BitWizard
 			raise ArgumentError.new "#{reg} is not a valid register, must be a number between 0x00..0xff" unless reg.is_a? Fixnum and (0..255).include? reg
 			raise ArgumentError.new "#{value} is not a valid value, must be a single byte or a string" unless (value.is_a? Fixnum and (0..255).include? value) or (value.is_a? String)
 
+			value = value.unpack("C*") if value.is_a? String
 			return spi_write(reg, value) if @bus == :spi
 			return i2c_write(reg, value) if @bus == :i2c
 		end
@@ -155,7 +156,7 @@ module BitWizard
 						break
 					end
 				end
-				
+
 				raise ArgumentError.new "No known board of type '#{identifier}'." if @type == :auto_detect and not identifier.empty?
 			else
 				Known_Boards.each do |name, data|
@@ -172,9 +173,11 @@ module BitWizard
 		end
 
 		def spi_write(reg, value)
-			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.unpack("C*").inspect or value.inspect}")
+			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.pack("C*").inspect or value.inspect}")
 			PiPiper::Spi.begin do |spi|
-				spi.write @address, reg, value
+				spi.write @address, reg
+				spi.write(*value) if value.is_a? Array
+				spi.write value unless value.is_a? Array
 			end
 		end
 
@@ -187,9 +190,13 @@ module BitWizard
 		end
 
 		def i2c_write(reg, value)
-			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.unpack("C*").inspect or value.inspect}")
+			@logger.debug("I2C [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.pack("C*").inspect or value.inspect}")
 			PiPiper::I2C.begin do |i2c|
-				i2c.write({ :to => @address, :data => [reg, value] })
+				data = [reg]
+				data << value unless value.is_a? Array
+				data += value if value.is_a? Array
+				
+				i2c.write({ :to => @address, :data => data })
 			end
 		end
 
