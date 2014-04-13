@@ -4,7 +4,7 @@ include BitWizard
 
 class RGBLed < Boards::FETs
 
-	def initialize(options)
+	def initialize(options={})
 		options = {
 			:address => 0x8a
 		}.merge(options).merge({

@@ -1,6 +1,11 @@
+#!/usr/bin/env ruby
+
 require_relative 'led_3fet'
 
 if __FILE__ == $0 then
+	options = {}
+	options[:address] = ARGV[1] if ARGV[1]
+
 	led = RGBLed.new
 
 	puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}"
