@@ -2,27 +2,23 @@ require 'bitwizard'
 
 include BitWizard
 
-class RGBLed < Boards::FETs
+class RGBLed
 
-	def initialize(options={})
-		options = {
-			:address => 0x8a
-		}.merge(options).merge({
-			:num => 3
-		})
+	def initialize(options)
+		@board = Board.detect options	
 
-		super(options)
+		@board.pwm_enable 1, 2, 3	
 	end
 
 	def get_rgb
-		[self[1], self[2], self[3]]
+		[@board[1], @board[2], @board[3]]
 	end
 	def set_rgb(r, g, b)
 		raise ArgumentError.new "RGB have to be between 0 and 255" unless (0..255).include? r and (0..255).include? g and (0..255).include? b 
 
-		self[1] = r
-		self[2] = g
-		self[3] = b
+		@board[1] = r
+		@board[2] = g
+		@board[3] = b
 	end
 
 	def get_hsv
