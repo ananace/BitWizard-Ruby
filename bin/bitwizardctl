@@ -22,12 +22,13 @@ class BitWizardCTL
 		scan: { text: "Scans for available boards" },
 		list: { text: "Lists all the found boards" },
 		eeprom: { args: "<addr>", text: "Read the eeprom from the specified address(es), or all found boards if none given" },
+		features: { args: "<addr>", text: "Returns all of the features of the specified board" },
 		exit: { text: "Exits the program" },
 		help: { text: "Lists all the valid commands, or detailed help for a given command" },
 		pwm: { args: "<addr> [port [value/'enable'/'disable']]", text: "Get/Set the PWM value for a certain port on a board" },
 		stepper: { args: "<addr> <'current'/'target'/'delay'> [value]", text: "Get/Set a value for a stepper motor on the specified board" },
 		motor: { args: "<addr> <'A'/'B'> <speed/'stop'>", text: "Change speed of a motor on the specified board" }
-	}
+	}.sort
 
 	def initialize
 		@defaultlogger = BasicLogger.new if Options[:verbose]
@@ -176,6 +177,15 @@ class BitWizardCTL
 		@boards.each do |_, board|
 			puts "0x#{board.address.to_s(16)}: #{board.type} (#{board.version})"
 		end
+	end
+
+	def cmd_features(*args)
+		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 1)" unless args.count == 1
+
+		addr = parse_addr args[0]
+		board = get_board addr
+
+		puts "0x#{addr.to_s(16)}: #{board.features.join(", ")}"
 	end
 
 	def cmd_eeprom(*args)
