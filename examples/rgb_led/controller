@@ -4,7 +4,7 @@ require_relative 'led_3fet'
 
 if __FILE__ == $0 then
 	options = {
-		:address => 0x8a
+		:address => 0x8a # Use the spi_3fets board by default
 	}
 	options[:address] = ARGV[1] if ARGV[1]
 
@@ -12,7 +12,7 @@ if __FILE__ == $0 then
 
 	puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}"
 
-	puts "Starting color wheel rotation;"
+	puts "Starting color wheel rotation - 10 degrees / second with 1 saturation and 0.75 value/brightness;"
 
 	h, s, v = *[0, 1, 0.75]
 
@@ -21,7 +21,7 @@ if __FILE__ == $0 then
 		h -= 360 if h > 360
 		
 		led.set_hsv(h, s, v)
-		puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}" if h % 10 == 0
+		puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}" if h % 15 == 0
 
 		sleep(0.1)
 	end

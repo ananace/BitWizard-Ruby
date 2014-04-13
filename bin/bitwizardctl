@@ -325,6 +325,3 @@ if ARGV.count > 0 then
 else
 	ctl.run!
 end
-
-puts
-	

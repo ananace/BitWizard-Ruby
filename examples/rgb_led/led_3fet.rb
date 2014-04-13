@@ -5,7 +5,9 @@ include BitWizard
 class RGBLed
 
 	def initialize(options)
-		@board = Board.detect options	
+		@board = Board.detect options
+
+		raise ArgumentError.new "You need to use a board that supports PWM" unless @board.known_board[:features].include? :pwm
 
 		@board.pwm_enable 1, 2, 3	
 	end
@@ -14,7 +16,7 @@ class RGBLed
 		[@board[1], @board[2], @board[3]]
 	end
 	def set_rgb(r, g, b)
-		raise ArgumentError.new "RGB have to be between 0 and 255" unless (0..255).include? r and (0..255).include? g and (0..255).include? b 
+		raise ArgumentError.new "RGB values have to be between 0 and 255" unless (0..255).include? r and (0..255).include? g and (0..255).include? b 
 
 		@board[1] = r
 		@board[2] = g
