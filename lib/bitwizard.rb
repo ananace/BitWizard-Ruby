@@ -144,6 +144,7 @@ module BitWizard
 			raise ArgumentError.new "Board type is 'auto_detect', but invalid address #{@address} given." if @type == :auto_detect and not (0..255).include? @address
 
 			identifier = read(0x01, 20).pack("C*").split("\0")[0]
+			raise ArgumentError.new "No response from board" if identifier.empty?
 
 			if @type == :auto_detect then
 				Known_Boards.each do |name, data|
@@ -154,7 +155,8 @@ module BitWizard
 						break
 					end
 				end
-				raise ArgumentError.new "Board reported identifier '#{identifier}', which doesn't match any known board types." if @type == :auto_detect
+				
+				raise ArgumentError.new "No known board of type '#{identifier}'." if @type == :auto_detect and not identifier.empty?
 			else
 				Known_Boards.each do |name, data|
 					if name =~ identifier then

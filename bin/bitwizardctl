@@ -2,6 +2,7 @@
 
 require 'bitwizard'
 require 'optparse'
+require 'readline'
 
 class BasicLogger
 	def debug(string)
@@ -39,12 +40,39 @@ class BitWizardCTL
 			puts
 		end
 
-		print "[BitWizard]\# "
-		STDIN.each_line do |line|
-			run_cmd!(*line.split)
+		complete = Proc.new { |line|
+			ret = []
+			DetailedHelp.each do |cmd, help|
+				data = line.split
+				if data.length > 1 then
+					next unless help.has_key? :args and cmd.to_s == data[0]
+					arg_data = help[:args].split[data.length - 1]
 
-			print "[BitWizard]\# "
+					if arg_data == "<addr>" then
+						@boards.each do |addr,_|
+							ret << addr if "0x#{addr.to_s(16)}"[0..data[1].length] == data[1]
+						end
+					end
+				else
+					ret << cmd.to_s if cmd.to_s[0..data[0].length] == data[0]
+				end
+			end
+
+			ret
+		}
+
+		Readline.completer_word_break_characters = ""
+		Readline.completion_append_character = " "
+		Readline.completion_proc = complete
+
+		while line = Readline.readline("[BitWizard]\# ", true) do
+			run_cmd! line.split
 		end
+#		STDIN.each_line do |line|
+#			run_cmd!(*line.split)
+#
+#			print "[BitWizard]\# "
+#		end
 	end
 
 	def run_cmd!(*args)
@@ -68,10 +96,11 @@ class BitWizardCTL
 	private
 
 	def parse_addr(addr)
-		addr.to_i
-		eval addr if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+		addr = eval addr if /^0x[0-9a-fA-F]{1,2}$/ =~ addr
+		addr = addr.to_i unless addr.is_a? Fixnum
 
 		raise ArgumentError.new "Address must be between 0x00 and 0xff" unless (0..255).include? addr
+		addr
 	end
 
 	def get_board(addr)
@@ -82,6 +111,7 @@ class BitWizardCTL
 		end
 
 		raise ArgumentError.new "No valid board on 0x#{addr.to_s(16)}" unless board.valid?
+		board
 	end
 
 	def cmd_help(*)
