@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 	s.name = "bitwizard"
-	s.version = "1.0.0"
+	s.version = "0.0.1"
 
 	s.authors = [ "Alexander \"Ace\" Olofsson" ]
 	s.date = "2014-04-12"
@@ -15,6 +15,5 @@ Gem::Specification.new do |s|
 	]
 	s.license = "MIT"
 
-
-	s.add_development_dependency 'rspec'
+	s.add_runtime_dependency 'pi_piper'
 end
