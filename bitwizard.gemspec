@@ -4,7 +4,8 @@ Gem::Specification.new do |s|
 
 	s.authors = [ "Alexander \"Ace\" Olofsson" ]
 	s.date = "2014-04-12"
-	s.description = s.summary = "Ruby library for controlling the BitWizard boards over SPI and I2C"
+	s.summary = "Ruby library for BitWizard boards"
+	s.description = "Ruby library for controlling the BitWizard boards over SPI and I2C"
 	s.email = "ace@haxalot.com"
 	s.homepage = "https://github.com/ace13/BitWizard-Ruby"
 	s.executables << "bitwizardctl"
