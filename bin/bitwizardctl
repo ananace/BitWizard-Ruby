@@ -270,7 +270,7 @@ class BitWizardCTL
 		value = value.to_i unless value == "stop"
 
 		raise ArgumentError.new "Motor must be 'A' or 'B'" unless [:A,:B].include? motor
-		raise ArgumentError.new "Value must be between -255 - 255" unless value.is_a? String or (-255..255).include value
+		raise ArgumentError.new "Value must be between -255 - 255" unless value.is_a? String or (-255..255).include? value
 		
 		addr = parse_addr addr
 		board = get_board addr
