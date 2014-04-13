@@ -80,10 +80,10 @@ class RGBLed
 
 		hi = (h * 6).to_i
 		f = h * 6 - hi
-		p = v * (1 - s) * 256
-		q = v * (1 - f * s) * 256
-		t = v * (1 - (1 - f) * s) * 256
-		v *= 256
+		p = v * (1 - s) * 255
+		q = v * (1 - f * s) * 255
+		t = v * (1 - (1 - f) * s) * 255
+		v *= 255
 
 		conv = Proc.new do
 			[0,0,0] 
