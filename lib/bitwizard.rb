@@ -175,9 +175,8 @@ module BitWizard
 		def spi_write(reg, value)
 			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.pack("C*").inspect or value.inspect}")
 			PiPiper::Spi.begin do |spi|
-				spi.write @address, reg
-				spi.write(*value) if value.is_a? Array
-				spi.write value unless value.is_a? Array
+				spi.write @address, reg, *value if value.is_a? Array
+				spi.write @address, reg, value unless value.is_a? Array
 			end
 		end
 
@@ -195,7 +194,7 @@ module BitWizard
 				data = [reg]
 				data << value unless value.is_a? Array
 				data += value if value.is_a? Array
-				
+
 				i2c.write({ :to => @address, :data => data })
 			end
 		end
