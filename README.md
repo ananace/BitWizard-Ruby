@@ -2,6 +2,7 @@ BitWizard-Ruby [![Gem Version](https://badge.fury.io/rb/bitwizard.svg)](http://b
 ==============
 
 Ruby library for controlling the BitWizard boards (over both SPI and I2C, though only SPI is tested for now)
+Built using [pi_piper](https://github.com/jwhitehorn/pi_piper), so for now it only works on the Raspberry Pi
 
 Installation
 ------------
