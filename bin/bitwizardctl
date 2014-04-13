@@ -21,10 +21,10 @@ class BitWizardCTL
 	DetailedHelp = {
 		:scan => { :text => "Scans for available boards" },
 		:list => { :text => "Lists all the found boards" },
-		:eeprom => { :args => "[addrs]", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
+		:eeprom => { :args => "<addr>", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
 		:exit => { :text => "Exits the program" },
 		:help => { :text => "Lists all the valid commands, or detailed help for a given command" },
-		:pwm => { :args => "<addr> [port [value/'on'/'off']]", :text => "Get/Set the PWM value for a certain port on a board" },
+		:pwm => { :args => "<addr> [port [value/'enable'/'disable']]", :text => "Get/Set the PWM value for a certain port on a board" },
 		:stepper => { :args => "<addr> <'current'/'target'/'delay'> [value]", :text => "Get/Set a value for a stepper motor on the specified board" },
 		:motor => { :args => "<addr> <'A'/'B'> <speed/'stop'>", :text => "Change speed of a motor on the specified board" }
 	}
@@ -41,23 +41,46 @@ class BitWizardCTL
 		end
 
 		complete = Proc.new { |line|
-			p line
 			ret = []
 			DetailedHelp.each do |cmd, help|
 				data = line.split
+				data << "" if line.end_with? " "
 
 				ret << cmd.to_s unless data
 				next unless data
 
 				if data.length > 1 then
-					next unless help.has_key? :args and cmd.to_s == data[0]
-					arg_data = help[:args].split
-					p arg_data
+					next unless cmd.to_s == data[0]
+					break if cmd.to_s == data[0] and not help.has_key? :args
+
+					arg_data = help[:args].split[data.length - 2]
 
 					if arg_data == "<addr>" then
+						#p @boards
 						@boards.each do |addr,_|
-							ret << addr if "0x#{addr.to_s(16)}"[0..data[1].length] == data[1]
+							straddr = "0x#{addr.to_s(16)}"
+							ret << "#{straddr}" if /^#{Regexp.escape(data[1])}/ =~ straddr
 						end
+					elsif cmd == :stepper and data.length == 3 then
+						["current","target","delay"].each do |str|
+							ret << "#{str}" if /^#{Regexp.escape(data[2])}/ =~ str
+						end
+					elsif cmd == :motor then
+						if data.length == 3 then
+							["A","B"].each do |str|
+								ret << "#{str}" if data[2].length == 0 or data[2] == str
+							end
+						elsif data.length == 4 and data[3].length > 0 then
+							ret << "stop" if "stop".start_with? data[3]
+						end
+					elsif cmd == :pwm and data.length == 4 then
+						["enable", "disable"].each do |str|
+							ret << "#{str}" if str.start_with? data[3]
+						end if data[3].length > 0
+					end
+
+					if ret.length == 1 then
+						ret = [ data[0..-2].join(" ") + " " + ret[0] ]
 					end
 				else
 					ret << cmd.to_s if /^#{Regexp.escape(line)}/ =~ cmd.to_s
@@ -72,13 +95,8 @@ class BitWizardCTL
 		Readline.completion_proc = complete
 
 		while line = Readline.readline("[BitWizard]\# ", true) do
-			run_cmd! line.split
+			run_cmd!(*line.split)
 		end
-#		STDIN.each_line do |line|
-#			run_cmd!(*line.split)
-#
-#			print "[BitWizard]\# "
-#		end
 	end
 
 	def run_cmd!(*args)
@@ -165,15 +183,13 @@ class BitWizardCTL
 			@boards.each do |_, board|
 				puts "0x#{board.address.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
 			end
-		else
-			args.each do |addr|
-				begin
-					addr = parse_addr addr
-					board = get_board addr
-					puts "0x#{addr.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
-				rescue ArgumentError => err
-					puts "0x#{addr.to_s(16)}: #{err}"
-				end
+		elsif args.count == 1 then
+			begin
+				addr = parse_addr args[0]
+				board = get_board addr
+				puts "0x#{addr.to_s(16)}: #{board.read(0x02, 4).pack("C*").unpack("l>")[0]}"
+			rescue ArgumentError => err
+				puts "0x#{addr.to_s(16)}: #{err}"
 			end
 		end
 	end
@@ -181,7 +197,7 @@ class BitWizardCTL
 	def cmd_pwm(*args)
 		raise ArgumentError.new "Wrong number of arguments (#{args.count} for 1-3)" unless (1..3).include? args.count
 		addr, port, value = *args if args.count == 3
-		value = value.to_i if not ["on","off"].include? value
+		value = value.to_i if not ["enable","disable"].include? value
 		addr, port = *args if args.count == 2
 		port = port.to_i if port
 		addr = args[0] if args.count == 1
@@ -197,8 +213,8 @@ class BitWizardCTL
 
 		if port then
 			if value.is_a? String then
-				succ = board.pwm_disable port if value == "off"
-				succ = board.pwm_enable port if value == "on"
+				succ = board.pwm_disable port if value == "disable"
+				succ = board.pwm_enable port if value == "enable"
 				puts "  PWM \##{port}: #{value == "off" ? "disabled" : "enabled"}." if succ
 				pust "  Failed to change PWM status on port \##{port}" unless succ
 			else
@@ -251,7 +267,7 @@ class BitWizardCTL
 
 		addr, motor, value = *args
 		motor = motor.to_sym
-		value = vaule.to_i unless value == "stop"
+		value = value.to_i unless value == "stop"
 
 		raise ArgumentError.new "Motor must be 'A' or 'B'" unless [:A,:B].include? motor
 		raise ArgumentError.new "Value must be between -255 - 255" unless value.is_a? String or (-255..255).include value
