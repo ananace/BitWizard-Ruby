@@ -41,12 +41,18 @@ class BitWizardCTL
 		end
 
 		complete = Proc.new { |line|
+			p line
 			ret = []
 			DetailedHelp.each do |cmd, help|
 				data = line.split
+
+				ret << cmd.to_s unless data
+				next unless data
+
 				if data.length > 1 then
 					next unless help.has_key? :args and cmd.to_s == data[0]
-					arg_data = help[:args].split[data.length - 1]
+					arg_data = help[:args].split
+					p arg_data
 
 					if arg_data == "<addr>" then
 						@boards.each do |addr,_|
@@ -54,7 +60,7 @@ class BitWizardCTL
 						end
 					end
 				else
-					ret << cmd.to_s if cmd.to_s[0..data[0].length] == data[0]
+					ret << cmd.to_s if /^#{Regexp.escape(line)}/ =~ cmd.to_s
 				end
 			end
 
