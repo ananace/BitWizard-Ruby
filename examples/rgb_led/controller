@@ -8,7 +8,7 @@ if __FILE__ == $0 then
 	}
 	options[:address] = ARGV[1] if ARGV[1]
 
-	led = RGBLed.new
+	led = RGBLed.new options
 
 	puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}"
 
