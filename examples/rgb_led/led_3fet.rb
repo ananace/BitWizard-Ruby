@@ -9,6 +9,9 @@ class RGBLed
 
 		raise ArgumentError.new "You need to use a board that supports PWM" unless @board.features.include? :pwm
 
+		@board.write 0x30, 0xff # Set all ports as outputs
+		                        # in the future this will be part of the input/output board features.
+
 		@board.pwm_enable 1, 2, 3
 
 		raise ArgumentError.new "Board needs to support PWM on ports 1, 2, and 3" unless ([1,2,3] - @board.pwm_ports).empty?
