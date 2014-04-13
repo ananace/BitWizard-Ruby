@@ -38,7 +38,7 @@ module BitWizard
 
 				if port.is_a? Array then
 					port.each do |port|
-						enablePWM! port
+						pwm_enable port
 					end
 					return true
 				end
@@ -66,7 +66,7 @@ module BitWizard
 
 				if port.is_a? Array then
 					port.each do |port|
-						disablePWM! port
+						pwm_disable port
 					end
 					return true
 				end
