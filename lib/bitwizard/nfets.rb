@@ -11,11 +11,11 @@ module BitWizard
 			# @option options [Number] :num The number of FETs on the board (3 or 7)
 			def initialize(options={})
 				options = {
-					:num => 3,
-					:bus => :spi
+					num: 3,
+					bus: :spi
 				}.merge(options)
 				options = options.merge({
-					:type => "#{options[:bus]}_#{options[:num]}fets".to_sym,
+					type: "#{options[:bus]}_#{options[:num]}fets".to_sym,
 				})
 
 				raise ArgumentError.new "Number of FETs must be 3 or 7" unless options[:num] == 3 or options[:num] == 7
@@ -173,14 +173,14 @@ module BitWizard
 	end
 
 	Known_Boards[/(spi|i2c)_3fets/] = {
-		:default_address => 0x8a,
-		:constructor => Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ :num => 3 }) },
-		:features => [ :input, :output, :stepper, :pwm ]
+		default_address: 0x8a,
+		constructor: Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ num: 3 }) },
+		features: [ :input, :output, :stepper, :pwm ]
 	}
 	Known_Boards[/(spi|i2c)_7fets/] = {
-		:default_address => 0x88,
-		:constructor => Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ :num => 7 }) },
-		:features => [ :input, :output, :stepper, :pwm ]
+		default_address: 0x88,
+		constructor: Proc.new { |options| BitWizard::Boards::FETs.new options.merge({ num: 7 }) },
+		features: [ :input, :output, :stepper, :pwm ]
 	}
 
 end

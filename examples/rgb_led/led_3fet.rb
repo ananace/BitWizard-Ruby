@@ -7,7 +7,7 @@ class RGBLed
 	def initialize(options)
 		@board = Board.detect options
 
-		raise ArgumentError.new "You need to use a board that supports PWM" unless @board.known_board[:features].include? :pwm
+		raise ArgumentError.new "You need to use a board that supports PWM" unless @board.features.include? :pwm
 
 		@board.pwm_enable 1, 2, 3	
 	end

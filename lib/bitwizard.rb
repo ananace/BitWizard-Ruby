@@ -12,27 +12,27 @@ module BitWizard
 		# @option options [Logger] :logger A logger you want to attach to the board.
 		def Board.detect(options)
 			options = {
-				:address => -1,
-				:bus => :spi,
-				:logger => NullLogger.new
+				address: -1,
+				bus: :spi,
+				logger: NullLogger.new
 			}.merge(options).merge({
-				:type => :auto_detect,
-				:skip_check => false
+				type: :auto_detect,
+				skip_check: false
 			})
 
 			options[:logger] = NullLogger.new unless options[:logger]
 
 			temp = BitWizard::Board.new options
-			correct = temp.known_board[:constructor].call(options.merge({:skip_check => true})) if temp.valid?
+			correct = temp.instance_variable_get(:@constructor).call(options.merge({skip_check: true})) if temp.valid?
 
 			correct.instance_variable_set(:@type, temp.type)
 			correct.instance_variable_set(:@version, temp.version)
-			correct.instance_variable_set(:@known_board, temp.known_board)
+			correct.instance_variable_set(:@features, temp.features)
 
 			correct
 		end
 
-		attr_reader :type, :version, :address, :bus, :known_board
+		attr_reader :type, :version, :address, :bus, :features
 		attr_accessor :logger
 
 		#Creates a generic board handle for reading and writing directly.
@@ -45,11 +45,11 @@ module BitWizard
 		# @option options [Logger] :logger Add a logger here to log data that's sent and received.
 		def initialize(options)
 			options = {
-				:address => -1,
-				:type => :auto_detect,
-				:bus => :spi,
-				:skip_check => false,
-				:logger => NullLogger.new
+				address: -1,
+				type: :auto_detect,
+				bus: :spi,
+				skip_check: false,
+				logger: NullLogger.new
 			}.merge(options)
 
 			raise ArgumentError.new "Bus must be :spi or :i2c." unless options[:bus] == :spi or options[:bus] == :i2c
@@ -102,6 +102,7 @@ module BitWizard
 		def address=(new_address)
 			raise ArgumentError.new "#{new_address} is not a valid address" unless new_address.is_a? Fixnum and (0..255).include? new_address and new_address|1 != new_address
 
+			# Run a quick check so that there isn't a board on the other address.
 			old_address = @address
 			@address = new_address
 			identifier = read(0x01, 20).pack("C*").split("\0")[0]
@@ -113,8 +114,11 @@ module BitWizard
 				end
 			end
 
-			write 0xf1, 0x55
+			# Unlock the change register
+			write 0xf1, 0x55 
 			write 0xf2, 0xaa
+
+			# Perform the change
 			write 0xf0, new_address
 
 			@address = new_address
@@ -135,8 +139,8 @@ module BitWizard
 				if name =~ @type then
 					@address = data[:default_address] unless (0..255).include? @address
 					found_board = {
-						:name => name,
-						:data => data
+						name: name,
+						data: data
 					}
 					break
 				end
@@ -145,14 +149,15 @@ module BitWizard
 			raise ArgumentError.new "Board type is 'auto_detect', but invalid address #{@address} given." if @type == :auto_detect and not (0..255).include? @address
 
 			identifier = read(0x01, 20).pack("C*").split("\0")[0]
-			raise ArgumentError.new "No response from board" if identifier.empty?
+			raise ArgumentError.new "No response from board" if not identifier or identifier.empty?
 
 			if @type == :auto_detect then
 				Known_Boards.each do |name, data|
 					if name =~ identifier then
 						@type, @version = *identifier.split
 						@type = @type.to_sym
-						@known_board = data
+						@constructor = data[:constructor]
+						@features = data[:features]
 						break
 					end
 				end
@@ -162,7 +167,7 @@ module BitWizard
 				Known_Boards.each do |name, data|
 					if name =~ identifier then
 						@version = identifier.split[1]
-						@known_board = data
+						@features = data[:features]
 						raise ArgumentError.new "Board reports type #{real_name}, which does not match #{@type}" unless found_board[:data] == data
 						break
 					end
@@ -195,13 +200,13 @@ module BitWizard
 				data << value unless value.is_a? Array
 				data += value if value.is_a? Array
 
-				i2c.write({ :to => @address, :data => data })
+				i2c.write({ to: @address, data: data })
 			end
 		end
 
 		def i2c_read(reg, count)
 			data = PiPiper::I2C.begin do |i2c|
-				i2c.write({ :to => @address | 1, :data => [reg, *Array.new(count, 0)] })
+				i2c.write({ to: @address | 1, data: [reg, *Array.new(count, 0)] })
 				i2c.read count
 			end
 			@logger.debug("I2C [0x#{@address.to_s(16)}] --> 0x#{reg.to_s(16)}: #{data.pack("C*").inspect}")

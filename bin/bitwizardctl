@@ -11,22 +11,22 @@ class BasicLogger
 end
 
 Options = {
-	:bus => :spi,
-	:verbose => false,
-	:scan => true
+	bus: :spi,
+	verbose: false,
+	scan: true
 }
 
 class BitWizardCTL
 
 	DetailedHelp = {
-		:scan => { :text => "Scans for available boards" },
-		:list => { :text => "Lists all the found boards" },
-		:eeprom => { :args => "<addr>", :text => "Read the eeprom from the specified address(es), or all found boards if none given" },
-		:exit => { :text => "Exits the program" },
-		:help => { :text => "Lists all the valid commands, or detailed help for a given command" },
-		:pwm => { :args => "<addr> [port [value/'enable'/'disable']]", :text => "Get/Set the PWM value for a certain port on a board" },
-		:stepper => { :args => "<addr> <'current'/'target'/'delay'> [value]", :text => "Get/Set a value for a stepper motor on the specified board" },
-		:motor => { :args => "<addr> <'A'/'B'> <speed/'stop'>", :text => "Change speed of a motor on the specified board" }
+		scan: { text: "Scans for available boards" },
+		list: { text: "Lists all the found boards" },
+		eeprom: { args: "<addr>", text: "Read the eeprom from the specified address(es), or all found boards if none given" },
+		exit: { text: "Exits the program" },
+		help: { text: "Lists all the valid commands, or detailed help for a given command" },
+		pwm: { args: "<addr> [port [value/'enable'/'disable']]", text: "Get/Set the PWM value for a certain port on a board" },
+		stepper: { args: "<addr> <'current'/'target'/'delay'> [value]", text: "Get/Set a value for a stepper motor on the specified board" },
+		motor: { args: "<addr> <'A'/'B'> <speed/'stop'>", text: "Change speed of a motor on the specified board" }
 	}
 
 	def initialize
@@ -130,7 +130,7 @@ class BitWizardCTL
 	def get_board(addr)
 		board = @boards[addr] if @boards.has_key? addr
 		unless board then
-			board = BitWizard::Board.detect :address => addr, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
+			board = BitWizard::Board.detect address: addr, bus: Options[:bus], logger: (@defaultlogger if Options[:verbose])
 			@boards[addr] = board if board.valid?
 		end
 
@@ -162,7 +162,7 @@ class BitWizardCTL
 		@boards = { }
 		(0..0xff).step(2) do |address|
 			begin
-				temp = BitWizard::Board.detect :address => address, :bus => Options[:bus], :logger => (@defaultlogger if Options[:verbose])
+				temp = BitWizard::Board.detect address: address, bus: Options[:bus], logger: (@defaultlogger if Options[:verbose])
 				next unless temp.valid?
 
 				@boards[temp.address] = temp
@@ -207,7 +207,7 @@ class BitWizardCTL
 		addr = parse_addr addr
 		board = get_board addr
 
-		raise ArgumentError.new "Board doesn't support PWM actions" unless board.known_board[:features].include? :pwm
+		raise ArgumentError.new "Board doesn't support PWM actions" unless board.features.include? :pwm
 
 		puts "0x#{addr.to_s(16)}:"
 
@@ -247,7 +247,7 @@ class BitWizardCTL
 		addr = parse_addr addr
 		board = get_board addr
 
-		raise ArgumentError.new "Board doesn't support stepper actions" unless board.known_board[:features].include? :stepper
+		raise ArgumentError.new "Board doesn't support stepper actions" unless board.features.include? :stepper
 
 		case type
 		when :current
@@ -275,7 +275,7 @@ class BitWizardCTL
 		addr = parse_addr addr
 		board = get_board addr
 
-		raise ArgumentError.new "Board doesn't support motor actions" unless board.known_board[:features].include? :motor
+		raise ArgumentError.new "Board doesn't support motor actions" unless board.features.include? :motor
 
 		if value.is_a? String
 			board.motor_stop motor

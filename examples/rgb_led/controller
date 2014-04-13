@@ -4,7 +4,7 @@ require_relative 'led_3fet'
 
 if __FILE__ == $0 then
 	options = {
-		:address => 0x8a # Use the spi_3fets board by default
+		address: 0x8a # Use the spi_3fets board by default
 	}
 	options[:address] = ARGV[1] if ARGV[1]
 
@@ -14,7 +14,7 @@ if __FILE__ == $0 then
 
 	puts "Starting color wheel rotation - ~20 degrees / second with 1 saturation and 0.75 value/brightness;"
 
-	h, s, v = *[0, 1, 0.75]
+	h, s, v = *[0, 1, 1]
 
 	while true do 
 		h += 2

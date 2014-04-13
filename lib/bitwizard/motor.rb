@@ -8,10 +8,10 @@ module BitWizard
 			# @param [optional, Hash] options A Hash of options.
 			def initialize(options={})
 				options = {
-					:bus => :spi
+					bus: :spi
 				}.merge(options)
 				options = options.merge({
-					:type => "#{options[:bus]}_motor".to_sym,
+					type: "#{options[:bus]}_motor".to_sym,
 				})
 
 				super(options)
@@ -147,9 +147,9 @@ module BitWizard
 	end
 
 	Known_Boards[/(spi|i2c)_motor/] = {
-		:default_address => 0x90,
-		:constructor => Proc.new { |options| BitWizard::Boards::Motor.new options },
-		:features => [ :motor, :stepper, :pwm ]
+		default_address: 0x90,
+		constructor: Proc.new { |options| BitWizard::Boards::Motor.new options },
+		features: [ :motor, :stepper, :pwm ]
 	}
 
 end
