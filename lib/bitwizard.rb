@@ -150,7 +150,7 @@ module BitWizard
 			raise ArgumentError.new "Don't know what board '#{@type}' is." if not found_board and @type != :auto_detect
 			raise ArgumentError.new "Board type is 'auto_detect', but invalid address #{@address} given." if @type == :auto_detect and not (0..255).include? @address
 
-			identifier = read(0x01, 20).pack("C*").split("\0")[0]
+			identifier = read(0x01, 20).pack("C*").split("\0")[0].downcase
 			raise ArgumentError.new "No response from board" if not identifier or identifier.empty?
 
 			if @type == :auto_detect then
