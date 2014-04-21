@@ -12,7 +12,7 @@ if __FILE__ == $0 then
 
 	puts "Current color:", "  RGB: #{led.get_rgb}", "  HSV: #{led.get_hsv}"
 
-	puts "Starting color wheel rotation - ~20 degrees / second with 1 saturation and 0.75 value/brightness;"
+	puts "Starting color wheel rotation at ~20 degrees/second with 1 saturation and 0.75 value/brightness."
 
 	h, s, v = *[0, 1, 1]
 
