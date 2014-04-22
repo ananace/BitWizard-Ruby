@@ -78,15 +78,15 @@ module BitWizard
 			raise ArgumentError.new "#{reg} is not a valid register, must be a number between 0x00..0xff" unless reg.is_a? Fixnum and (0..255).include? reg
 			#raise ArgumentError.new "#{value} is not a valid value, must be a single byte or an array" unless (value.is_a? Fixnum and (0..255).include? value) or (value.is_a? Array)
 
-			return spi_write(reg, value) if @bus == :spi
-			return i2c_write(reg, value) if @bus == :i2c
+			return spi_write(reg, *value) if @bus == :spi
+			return i2c_write(reg, *value) if @bus == :i2c
 		end
 
 		#Reads a value from the board
 		#
 		# @param [Number] reg The registry address to read from
 		# @param [Number] count The number of bytes to read
-		def read(reg, count)
+		def read(reg, count=1)
 			raise ArgumentError.new "#{reg} is not a valid register, must be a number between 0x00..0xff" unless reg.is_a? Fixnum and (0..255).include? reg
 
 			return spi_read(reg, count) if @bus == :spi
@@ -179,10 +179,10 @@ module BitWizard
 		end
 
 		def spi_write(reg, *value)
-			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.is_a? Array and value.pack("C*").inspect or [value].pack("C*").inspect}")
+			@logger.debug("SPI [0x#{@address.to_s(16)}] <-- 0x#{reg.to_s(16)}: #{value.inspect}")
 
 			PiPiper::Spi.begin do |spi|
-				spi.write @address, reg, *value
+				spi.write(@address, reg, *value)
 			end
 		end
 
