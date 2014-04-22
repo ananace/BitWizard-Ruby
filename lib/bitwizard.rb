@@ -76,9 +76,8 @@ module BitWizard
 		# @param [Number|String] value The data to write to the board
 		def write(reg, value)
 			raise ArgumentError.new "#{reg} is not a valid register, must be a number between 0x00..0xff" unless reg.is_a? Fixnum and (0..255).include? reg
-			raise ArgumentError.new "#{value} is not a valid value, must be a single byte or a string" unless (value.is_a? Fixnum and (0..255).include? value) or (value.is_a? String)
+			raise ArgumentError.new "#{value} is not a valid value, must be a single byte or an array" unless (value.is_a? Fixnum and (0..255).include? value) or (value.is_a? Array)
 
-			value = value.unpack("C*") if value.is_a? String
 			return spi_write(reg, value) if @bus == :spi
 			return i2c_write(reg, value) if @bus == :i2c
 		end

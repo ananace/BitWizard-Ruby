@@ -226,7 +226,7 @@ class BitWizardCTL
 				succ = board.pwm_disable port if value == "disable"
 				succ = board.pwm_enable port if value == "enable"
 				puts "  PWM \##{port}: #{value == "off" ? "disabled" : "enabled"}." if succ
-				pust "  Failed to change PWM status on port \##{port}" unless succ
+				puts "  Failed to change PWM status on port \##{port}" unless succ
 			else
 				ports = board.pwm_ports
 				unless ports.include? port then
